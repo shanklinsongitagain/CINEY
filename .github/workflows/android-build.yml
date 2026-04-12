@@ -41,6 +41,10 @@ jobs:
           VITE_APP_VERSION=latest-firestick-build
           EOF
 
+      - name: Create Android local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
       - name: Install dependencies
         run: npm ci
 
