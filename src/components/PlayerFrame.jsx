@@ -12,17 +12,27 @@ function PlayerFrame({ mediaType, id, season = 1, episode = 1, media, episodeDet
   const [frameLoaded, setFrameLoaded] = useState(false)
   const [playerHealthy, setPlayerHealthy] = useState(false)
   const [showFallback, setShowFallback] = useState(false)
+  const [sourceIndex, setSourceIndex] = useState(null)
+  const [retryTick, setRetryTick] = useState(0)
   const lastSavedAtRef = useRef(0)
 
   useEffect(() => {
     setStartTime(readSavedProgress(mediaType, id, season, episode))
     lastSavedAtRef.current = 0
+    setSourceIndex(null)
+    setRetryTick(0)
   }, [mediaType, id, season, episode])
 
-  const sourceUrl = useMemo(
-    () => buildPlayerUrl(mediaType, id, season, episode, startTime),
-    [episode, id, mediaType, season, startTime],
-  )
+  const sourceUrl = useMemo(() => {
+    const url = new URL(buildPlayerUrl(mediaType, id, season, episode, startTime))
+    if (sourceIndex !== null) {
+      url.searchParams.set('source', String(sourceIndex))
+    }
+    if (retryTick > 0) {
+      url.searchParams.set('retry', String(retryTick))
+    }
+    return url.toString()
+  }, [episode, id, mediaType, retryTick, season, sourceIndex, startTime])
 
   const progressMetadata = useMemo(
     () => ({
@@ -79,6 +89,17 @@ function PlayerFrame({ mediaType, id, season = 1, episode = 1, media, episodeDet
     return () => window.clearTimeout(timeoutId)
   }, [frameLoaded, playerHealthy])
 
+  function handleRetry() {
+    setShowFallback(false)
+    setRetryTick((v) => v + 1)
+  }
+
+  function handleSource2() {
+    setShowFallback(false)
+    setSourceIndex(2)
+    setRetryTick((v) => v + 1)
+  }
+
   return (
     <div className="player-block">
       <div className="player-shell">
@@ -90,14 +111,15 @@ function PlayerFrame({ mediaType, id, season = 1, episode = 1, media, episodeDet
           allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
           allowFullScreen
           onLoad={() => setFrameLoaded(true)}
+          onError={() => setShowFallback(true)}
         />
       </div>
 
       {showFallback && (
         <div className="player-fallback-bar">
-          <a href={sourceUrl} className="player-link-button" target="_blank" rel="noreferrer">
-            Open full player ↗
-          </a>
+          <span className="player-fallback-label">Playback stalled</span>
+          <button type="button" className="player-link-button" onClick={handleRetry}>Retry</button>
+          <button type="button" className="player-link-button" onClick={handleSource2}>Source 2</button>
         </div>
       )}
     </div>
