@@ -1,5 +1,7 @@
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { NAVBAR_FOCUS_KEY } from './Navbar'
 import { removeContinueWatchingItem } from '../lib/progress'
 import { getImageUrl } from '../lib/tmdb'
 
@@ -94,25 +96,38 @@ function ContinueWatchingCard({ item, onRemove }) {
 }
 
 function ContinueWatching({ items, onRemove }) {
+  const { ref, focusKey } = useFocusable({
+    trackChildren: true,
+    focusable: false,
+    onArrowPress: (direction) => {
+      if (direction === 'up') {
+        setFocus(NAVBAR_FOCUS_KEY)
+        return false
+      }
+    },
+  })
+
   if (!items.length) {
     return null
   }
 
   return (
-    <section className="section-block">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Resume</p>
-          <h2>Continue watching</h2>
+    <FocusContext.Provider value={focusKey}>
+      <section ref={ref} className="section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Resume</p>
+            <h2>Continue watching</h2>
+          </div>
         </div>
-      </div>
-      <div className="continue-grid">
-        {items.map((item) => (
-          <ContinueWatchingCard key={item.key} item={item} onRemove={onRemove} />
-        ))}
-      </div>
-    </section>
+        <div className="continue-grid">
+          {items.map((item) => (
+            <ContinueWatchingCard key={item.key} item={item} onRemove={onRemove} />
+          ))}
+        </div>
+      </section>
+    </FocusContext.Provider>
   )
 }
 
-export default ContinueWatching
+export default memo(ContinueWatching)

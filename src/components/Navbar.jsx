@@ -2,6 +2,8 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 
+export const NAVBAR_FOCUS_KEY = 'CINEY_NAVBAR'
+
 function NavbarItem({ children, onEnterPress, to, href, isActive = false }) {
   const { ref, focused } = useFocusable({ onEnterPress })
   const className = `nav-link-pill${isActive ? ' active' : ''}${focused ? ' spatial-focused' : ''}`
@@ -24,7 +26,9 @@ function NavbarItem({ children, onEnterPress, to, href, isActive = false }) {
 function Navbar() {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
-  const { ref, focusKey } = useFocusable({ trackChildren: true })
+
+  // Stable focusKey so any page can call setFocus(NAVBAR_FOCUS_KEY) to reach the navbar
+  const { ref, focusKey } = useFocusable({ trackChildren: true, focusKey: NAVBAR_FOCUS_KEY })
 
   const handleSubmit = (event) => {
     if (event?.preventDefault) event.preventDefault()

@@ -1,9 +1,18 @@
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { useEffect } from 'react'
+import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { memo, useEffect } from 'react'
+import { NAVBAR_FOCUS_KEY } from './Navbar'
 import MovieCard from './MovieCard'
 
 function MovieGrid({ movies, emptyMessage = 'No movies found.', autoFocus = false }) {
-  const { ref, focusKey, focusSelf } = useFocusable({ trackChildren: true })
+  const { ref, focusKey, focusSelf } = useFocusable({
+    trackChildren: true,
+    onArrowPress: (direction) => {
+      if (direction === 'up') {
+        setFocus(NAVBAR_FOCUS_KEY)
+        return false
+      }
+    },
+  })
 
   useEffect(() => {
     if (autoFocus) {
@@ -26,4 +35,4 @@ function MovieGrid({ movies, emptyMessage = 'No movies found.', autoFocus = fals
   )
 }
 
-export default MovieGrid
+export default memo(MovieGrid)

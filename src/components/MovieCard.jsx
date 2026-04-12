@@ -1,4 +1,5 @@
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { memo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getImageUrl, getMediaReleaseDate, getMediaTitle, getMediaType } from '../lib/tmdb'
 
@@ -36,4 +37,4 @@ function MovieCard({ movie }) {
   )
 }
 
-export default MovieCard
+export default memo(MovieCard)

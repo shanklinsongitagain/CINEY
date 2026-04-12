@@ -1,5 +1,6 @@
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { Link, useNavigate } from 'react-router-dom'
+import { NAVBAR_FOCUS_KEY } from './Navbar'
 import { getBackdropUrl, getMediaTitle, getMediaType } from '../lib/tmdb'
 
 function FocusableAction({ children, to, primary = false }) {
@@ -18,6 +19,13 @@ function Hero({ movie }) {
   const { ref: heroRef, focusKey: heroFocusKey } = useFocusable({
     trackChildren: true,
     focusable: false,
+    // Pressing UP from any Hero button jumps straight to the navbar
+    onArrowPress: (direction) => {
+      if (direction === 'up') {
+        setFocus(NAVBAR_FOCUS_KEY)
+        return false
+      }
+    },
   })
 
   if (!movie) {
