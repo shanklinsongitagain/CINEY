@@ -1,7 +1,7 @@
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import PlayerFrame from '../components/VideoPlayer'
+import PlayerFrame from '../components/PlayerFrame'
 import { NAVBAR_FOCUS_KEY } from '../components/Navbar'
 import { getBackdropUrl, getMediaTitle, getMovieDetails, getTvDetails, getTvSeasonDetails } from '../lib/tmdb'
 
