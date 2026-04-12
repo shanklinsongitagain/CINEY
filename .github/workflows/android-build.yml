@@ -38,10 +38,11 @@ jobs:
           VITE_PLAYER_BASE_URL=${{ secrets.VITE_PLAYER_BASE_URL }}
           VITE_PLAYER_ALLOWED_ORIGIN=${{ secrets.VITE_PLAYER_ALLOWED_ORIGIN }}
           VITE_GITHUB_REPO=${{ github.repository }}
+          VITE_APP_VERSION=latest-firestick-build
           EOF
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build web app
         run: npm run build
@@ -49,9 +50,12 @@ jobs:
       - name: Sync Capacitor Android
         run: npm run android:sync
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
