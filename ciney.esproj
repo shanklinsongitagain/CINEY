@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
+    <None Include=".github\workflows\android-build.yml" />
   </ItemGroup>
 </Project>

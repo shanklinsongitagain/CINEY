@@ -1,70 +1,48 @@
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --red: #e50914;
+  --red-dim: rgba(229,9,20,0.85);
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1f1f1f;
+  --text: #e5e5e5;
+  --text-dim: #999;
+  --sans: 'Segoe UI', system-ui, Roboto, sans-serif;
 
-  font: 16px/1.5 var(--sans);
-  letter-spacing: 0.01em;
+  font: 16px/1.45 var(--sans);
   color-scheme: dark;
-  color: #e2e8f0;
-  background: #05070d;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  color: var(--text);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
 html { color-scheme: dark; }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  background: linear-gradient(180deg, #0c1222 0%, #05070d 100%);
-}
+body { margin: 0; background: var(--bg); }
 
 a { color: inherit; text-decoration: none; }
-
 button, input, select { font: inherit; }
-
-/* Native focus outline — only visible when tabbing, not on click */
-:focus-visible {
-  outline: 3px solid rgba(239, 68, 68, 0.85);
-  outline-offset: 2px;
-}
-:focus:not(:focus-visible) { outline: none; }
-
 img { max-width: 100%; display: block; }
+h1,h2,h3,p { margin-top: 0; }
 
-h1, h2, h3, p { margin-top: 0; }
+h1 { font-size: clamp(1.6rem, 3.5vw, 3rem); line-height: 1.1; margin-bottom: 0.5rem; color: #fff; }
+h2 { font-size: clamp(1rem, 2vw, 1.6rem); margin-bottom: 0; color: #fff; }
+h3 { font-size: 0.9rem; margin-bottom: 0; color: #fff; }
 
-h1 {
-  font-size: clamp(1.6rem, 4vw, 3.2rem);
-  line-height: 1.1;
-  margin-bottom: 0.6rem;
-  color: #f8fafc;
-}
-
-h2 {
-  font-size: clamp(1.1rem, 2.5vw, 1.8rem);
-  margin-bottom: 0.2rem;
-  color: #f1f5f9;
-}
-
-h3 {
-  font-size: clamp(0.9rem, 1.5vw, 1.2rem);
-  margin-bottom: 0.2rem;
-  color: #f1f5f9;
-}
+:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+:focus:not(:focus-visible) { outline: none; }
 
 #root { min-height: 100vh; }
 
-/* ── TV / Firestick — 1280 px + ──────────────────────────────── */
+/* ── TV 1280px+: kill every transition, scale fonts ─ */
 @media screen and (min-width: 1280px) {
-  :root { font: 15px/1.5 var(--sans); }
+  :root { font: 14px/1.45 var(--sans); }
+  h1 { font-size: clamp(1.4rem, 2.4vw, 2.4rem); }
+  h2 { font-size: clamp(0.95rem, 1.5vw, 1.4rem); }
 
-  h1 { font-size: clamp(1.6rem, 2.6vw, 2.6rem); }   /* ≈ 39 px at 1920 */
-  h2 { font-size: clamp(1.1rem, 1.7vw, 1.7rem); }   /* ≈ 25 px */
-  h3 { font-size: clamp(0.85rem, 1.1vw, 1.1rem); }  /* ≈ 16 px */
+  *, *::before, *::after {
+    transition: none !important;
+    animation-duration: 0ms !important;
+  }
 }

@@ -6,55 +6,62 @@ import {
   getMediaTitle, getMovieDetails, getTvDetails,
 } from '../lib/tmdb'
 
-function FocusBtn({ children, onEnterPress, primary = false, autoFocus = false }) {
+function FBtn({ children, onEnterPress, primary = false, autoFocus = false }) {
   const { ref, focused, focusSelf } = useFocusable({ onEnterPress })
   useEffect(() => { if (autoFocus) focusSelf() }, [autoFocus, focusSelf])
-  const cls = `${primary ? 'primary-button' : 'secondary-button'}${focused ? ' spatial-focused' : ''}`
-  return <button ref={ref} type="button" className={cls} onClick={onEnterPress} tabIndex={0}>{children}</button>
+  return (
+    <button
+      ref={ref} type="button" tabIndex={0}
+      className={`btn ${primary ? 'btn-primary' : 'btn-secondary'}${focused ? ' spatial-focused' : ''}`}
+      onClick={onEnterPress}
+    >
+      {children}
+    </button>
+  )
 }
 
 function MovieDetails({ mediaType }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const [media, setMedia] = useState(null)
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-
-  const { ref: pageRef, focusKey: pageFocusKey } = useFocusable({
-    trackChildren: true, focusable: false,
-  })
+  const [error, setError] = useState('')
+  const { ref, focusKey } = useFocusable({ trackChildren: true, focusable: false })
 
   useEffect(() => {
     let active = true
-    async function load() {
-      try {
-        const d = mediaType === 'tv' ? await getTvDetails(id) : await getMovieDetails(id)
-        if (active) { setMedia(d); setError('') }
-      } catch (e) { if (active) setError(e.message) }
-      finally { if (active) setLoading(false) }
-    }
-    load()
+    ;(mediaType === 'tv' ? getTvDetails(id) : getMovieDetails(id))
+      .then((d) => { if (active) { setMedia(d); setError('') } })
+      .catch((e) => { if (active) setError(e.message) })
+      .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [id, mediaType])
 
-  if (loading) return <main className="page container"><p className="status-message">Loading…</p></main>
-  if (error) return <main className="page container"><p className="status-message status-message--error">{error}</p></main>
-  if (!media) return null
+  if (loading) return <main className="page"><div style={{ padding: '2rem 4vw' }}><p className="status-message">Loading…</p></div></main>
+  if (error)   return <main className="page"><div style={{ padding: '2rem 4vw' }}><p className="status-message status-message--error">{error}</p></div></main>
+  if (!media)  return null
 
-  const trailer = media.videos?.results?.find((v) => v.site === 'YouTube' && v.type === 'Trailer')
-  const releaseDate = getMediaReleaseDate(media)
   const watchUrl = mediaType === 'tv'
     ? `/watch/tv/${media.id}?season=${media.seasons?.[0]?.season_number ?? 1}&episode=1`
     : `/watch/movie/${media.id}`
+  const releaseDate = getMediaReleaseDate(media)
+  const trailer = media.videos?.results?.find((v) => v.site === 'YouTube' && v.type === 'Trailer')
 
   return (
-    <FocusContext.Provider value={pageFocusKey}>
-      <main ref={pageRef} className="page container">
-        <section className="detail-hero">
-          <div className="detail-backdrop">
-            {media.backdrop_path && <img src={getBackdropUrl(media.backdrop_path)} alt="" />}
-          </div>
-          <div className="detail-grid">
+    <FocusContext.Provider value={focusKey}>
+      <main ref={ref} className="page">
+
+        {/* Backdrop */}
+        {media.backdrop_path && (
+          <div
+            className="detail-backdrop-wrap"
+            style={{ backgroundImage: `url(${getBackdropUrl(media.backdrop_path)})` }}
+          />
+        )}
+
+        {/* Info grid */}
+        <div className="detail-page">
+          <div className="detail-info">
             <div>
               {media.poster_path && (
                 <img src={getImageUrl(media.poster_path)} alt={getMediaTitle(media)} className="detail-poster" />
@@ -63,45 +70,46 @@ function MovieDetails({ mediaType }) {
             <div className="detail-copy">
               <p className="eyebrow">{mediaType === 'tv' ? 'TV Series' : 'Movie'}</p>
               <h1>{getMediaTitle(media)}</h1>
+
               <div className="detail-meta">
-                <span>{releaseDate ? new Date(releaseDate).getFullYear() : 'TBA'}</span>
-                <span>
-                  {mediaType === 'tv'
-                    ? `${media.number_of_seasons ?? 0} season${media.number_of_seasons === 1 ? '' : 's'}`
-                    : media.runtime ? `${media.runtime} min` : 'N/A'}
-                </span>
+                {releaseDate && <span>{new Date(releaseDate).getFullYear()}</span>}
+                {mediaType === 'tv'
+                  ? <span>{media.number_of_seasons ?? 0} season{media.number_of_seasons === 1 ? '' : 's'}</span>
+                  : media.runtime ? <span>{media.runtime} min</span> : null}
                 {media.vote_average > 0 && <span>★ {media.vote_average.toFixed(1)}</span>}
               </div>
+
               {media.genres?.length > 0 && (
                 <div className="genre-list">
                   {media.genres.map((g) => <span key={g.id}>{g.name}</span>)}
                 </div>
               )}
+
               <p>{media.overview || 'No overview available.'}</p>
-              <div className="hero-actions">
-                <FocusBtn primary autoFocus onEnterPress={() => navigate(watchUrl)}>▶ Watch now</FocusBtn>
-                <FocusBtn onEnterPress={() => navigate(-1)}>← Back</FocusBtn>
+
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                <FBtn primary autoFocus onEnterPress={() => navigate(watchUrl)}>▶ Watch Now</FBtn>
+                <FBtn onEnterPress={() => navigate(-1)}>← Back</FBtn>
               </div>
             </div>
           </div>
-        </section>
 
-        {trailer && (
-          <section className="section-block">
-            <div className="section-heading">
-              <div><p className="eyebrow">Trailer</p><h2>Official preview</h2></div>
+          {trailer && (
+            <div style={{ marginTop: '2rem' }}>
+              <p className="eyebrow">Trailer</p>
+              <div className="player-shell" style={{ maxWidth: '720px', borderRadius: '6px' }}>
+                <iframe
+                  title="trailer"
+                  src={`https://www.youtube.com/embed/${trailer.key}`}
+                  className="player-frame"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             </div>
-            <div className="player-shell trailer-shell">
-              <iframe
-                title={`${getMediaTitle(media)} trailer`}
-                src={`https://www.youtube.com/embed/${trailer.key}`}
-                className="player-frame"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </section>
-        )}
+          )}
+        </div>
+
       </main>
     </FocusContext.Provider>
   )

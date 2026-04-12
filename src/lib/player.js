@@ -23,3 +23,14 @@ export function buildPlayerUrl(mediaType, id, season = 1, episode = 1, progress 
 
   return url.toString()
 }
+
+export function getVideoStreamUrl(mediaType, id, season = 1, episode = 1) {
+  const baseUrl = playerBaseUrl.replace(/\/embed\/?$/, '')
+  const safeSeason = Number.isFinite(Number(season)) ? Number(season) : 1
+  const safeEpisode = Number.isFinite(Number(episode)) ? Number(episode) : 1
+  
+  if (mediaType === 'tv') {
+    return `${baseUrl}/streaming/tv/${id}/${safeSeason}/${safeEpisode}`
+  }
+  return `${baseUrl}/streaming/movie/${id}`
+}

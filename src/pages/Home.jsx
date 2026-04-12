@@ -2,43 +2,33 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { useEffect, useState } from 'react'
 import ContinueWatching from '../components/ContinueWatching'
 import Hero from '../components/Hero'
-import MovieGrid from '../components/MovieGrid'
+import MovieRow from '../components/MovieRow'
 import { CONTENT_FOCUS_KEY } from '../components/Navbar'
 import { getContinueWatchingChangedEventName, getContinueWatchingItems } from '../lib/progress'
 import { getTrendingMovies, getTrendingShows } from '../lib/tmdb'
 
 function Home() {
-  const [movies, setMovies] = useState([])
-  const [shows, setShows] = useState([])
-  const [continueWatching, setContinueWatching] = useState([])
-  const [error, setError] = useState('')
+  const [movies, setMovies]   = useState([])
+  const [shows,  setShows]    = useState([])
+  const [cw,     setCw]       = useState([])
+  const [error,  setError]    = useState('')
   const [loading, setLoading] = useState(true)
 
-  // Register the stable content focusKey so navbar DOWN handler lands here
-  const { ref: contentRef, focusKey: contentFocusKey } = useFocusable({
-    trackChildren: true,
-    focusable: false,
-    focusKey: CONTENT_FOCUS_KEY,
+  const { ref, focusKey } = useFocusable({
+    trackChildren: true, focusable: false, focusKey: CONTENT_FOCUS_KEY,
   })
 
   useEffect(() => {
     let active = true
-    async function load() {
-      try {
-        const [m, s] = await Promise.all([getTrendingMovies(), getTrendingShows()])
-        if (active) { setMovies(m); setShows(s); setError('') }
-      } catch (e) {
-        if (active) setError(e.message)
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-    load()
+    Promise.all([getTrendingMovies(), getTrendingShows()])
+      .then(([m, s]) => { if (active) { setMovies(m); setShows(s) } })
+      .catch((e)     => { if (active) setError(e.message) })
+      .finally(()    => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])
 
   useEffect(() => {
-    const load = () => setContinueWatching(getContinueWatchingItems())
+    const load = () => setCw(getContinueWatchingItems())
     load()
     window.addEventListener(getContinueWatchingChangedEventName(), load)
     window.addEventListener('focus', load)
@@ -48,36 +38,36 @@ function Home() {
     }
   }, [])
 
-  const featured = movies[0] ?? shows[0]
-
   return (
-    <FocusContext.Provider value={contentFocusKey}>
-      <main ref={contentRef} className="page container">
-        <Hero movie={featured} />
-        <ContinueWatching
-          items={continueWatching}
-          onRemove={(key) => setContinueWatching((cur) => cur.filter((i) => i.key !== key))}
-        />
+    <FocusContext.Provider value={focusKey}>
+      <main ref={ref} className="page">
+        <Hero movie={movies[0] ?? shows[0]} />
 
-        <section className="section-block">
-          <div className="section-heading">
-            <div><p className="eyebrow">Library</p><h2>Trending Movies</h2></div>
-          </div>
-          {loading && <p className="status-message">Loading…</p>}
-          {error && <p className="status-message status-message--error">{error}</p>}
-          {!loading && !error && (
-            <MovieGrid movies={movies} emptyMessage="No trending movies found." autoFocus />
-          )}
-        </section>
+        <div className="content-rows">
+          <ContinueWatching
+            items={cw}
+            onRemove={(key) => setCw((cur) => cur.filter((i) => i.key !== key))}
+          />
 
-        <section className="section-block">
-          <div className="section-heading">
-            <div><p className="eyebrow">Series</p><h2>Trending TV Shows</h2></div>
-          </div>
+          {loading && <p className="status-message" style={{ margin: '1.5rem 0' }}>Loading…</p>}
+          {error   && <p className="status-message status-message--error" style={{ margin: '1.5rem 0' }}>{error}</p>}
+
           {!loading && !error && (
-            <MovieGrid movies={shows} emptyMessage="No trending shows found." />
+            <>
+              <MovieRow
+                movies={movies}
+                title="Trending Movies"
+                eyebrow="Popular right now"
+                autoFocus
+              />
+              <MovieRow
+                movies={shows}
+                title="Trending TV Shows"
+                eyebrow="Series"
+              />
+            </>
           )}
-        </section>
+        </div>
       </main>
     </FocusContext.Provider>
   )

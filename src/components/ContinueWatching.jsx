@@ -1,6 +1,7 @@
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { memo } from 'react'
+import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { memo, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { NAVBAR_FOCUS_KEY } from './Navbar'
 import { removeContinueWatchingItem } from '../lib/progress'
 import { getImageUrl } from '../lib/tmdb'
 
@@ -9,86 +10,86 @@ function fmt(s) {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
 }
 
-function ContinueWatchingCard({ item, onRemove }) {
+function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
   const navigate = useNavigate()
   const watchPath = item.mediaType === 'tv'
     ? `/watch/tv/${item.id}?season=${item.season ?? 1}&episode=${item.episode ?? 1}`
     : `/watch/movie/${item.id}`
 
-  const {
-    ref: cardRef, focusKey,
-    focused: cardFocused, hasFocusedChild,
-  } = useFocusable({ trackChildren: true })
-  const { ref: resumeRef, focused: resumeFocused } = useFocusable({
+  const { ref, focused } = useFocusable({
+    focusKey,
     onEnterPress: () => navigate(watchPath),
-  })
-  const { ref: removeRef, focused: removeFocused } = useFocusable({
-    onEnterPress: () => { removeContinueWatchingItem(item); onRemove?.(item.key) },
+    onArrowPress: (dir) => {
+      if (dir === 'left'  && prevKey) { setFocus(prevKey); return false }
+      if (dir === 'right' && nextKey) { setFocus(nextKey); return false }
+      if (dir === 'up')               { setFocus(NAVBAR_FOCUS_KEY); return false }
+    },
   })
 
-  const active = cardFocused || hasFocusedChild
+  useEffect(() => {
+    if (focused && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' })
+    }
+  }, [focused, ref])
 
   return (
     <article
-      ref={cardRef}
-      className={`continue-card${active ? ' continue-card--active' : ''}`}
+      ref={ref}
+      tabIndex={0}
+      className={`continue-card${focused ? ' spatial-focused' : ''}`}
+      onClick={() => navigate(watchPath)}
     >
-      <FocusContext.Provider value={focusKey}>
-        {item.posterPath ? (
-          <img src={getImageUrl(item.posterPath)} alt={item.title} className="continue-card-poster" loading="lazy" />
-        ) : (
-          <div className="continue-card-poster continue-card-poster--empty">No image</div>
-        )}
-        <div className="continue-card-body">
-          <h3>{item.title}</h3>
-          <p>{item.mediaType === 'tv'
-            ? `S${item.season ?? 1} E${item.episode ?? 1}`
-            : 'Movie'} · {fmt(item.progress)}</p>
-        </div>
-        <div className="continue-card-actions">
-          <button
-            ref={resumeRef}
-            type="button"
-            className={`continue-action-button${resumeFocused ? ' spatial-focused' : ''}`}
-            onClick={() => navigate(watchPath)}
-          >
-            Resume
-          </button>
-          <button
-            ref={removeRef}
-            type="button"
-            className={`continue-remove-button${removeFocused ? ' spatial-focused' : ''}`}
-            onClick={() => { removeContinueWatchingItem(item); onRemove?.(item.key) }}
+      {item.posterPath ? (
+        <img src={getImageUrl(item.posterPath)} alt={item.title} className="continue-card-poster" loading="lazy" />
+      ) : (
+        <div className="continue-card-poster continue-card-poster--empty">No image</div>
+      )}
+      <div className="continue-card-body">
+        <h3>{item.title}</h3>
+        <p>
+          {item.mediaType === 'tv' ? `S${item.season ?? 1} E${item.episode ?? 1} · ` : ''}
+          {fmt(item.progress)}
+          {' · '}
+          <span
+            style={{ color: '#aaa', cursor: 'pointer' }}
+            onClick={(e) => { e.stopPropagation(); removeContinueWatchingItem(item); onRemove?.(item.key) }}
           >
             Remove
-          </button>
-        </div>
-      </FocusContext.Provider>
+          </span>
+        </p>
+      </div>
     </article>
   )
 }
 
 function ContinueWatching({ items, onRemove }) {
+  const rowId = useRef('cw-')
+  const cardKey = useCallback((item) => `${rowId.current}${item.key}`, [])
   const { ref, focusKey } = useFocusable({ trackChildren: true, focusable: false })
 
   if (!items.length) return null
 
   return (
-    <FocusContext.Provider value={focusKey}>
-      <section ref={ref} className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Resume</p>
-            <h2>Continue watching</h2>
-          </div>
-        </div>
-        <div className="continue-grid">
-          {items.map((item) => (
-            <ContinueWatchingCard key={item.key} item={item} onRemove={onRemove} />
+    <div className="content-row">
+      <div className="row-header">
+        <p className="eyebrow">Resume</p>
+        <h2 className="row-title">Continue Watching</h2>
+      </div>
+      <FocusContext.Provider value={focusKey}>
+        <div ref={ref} className="row-track">
+          {items.map((item, i) => (
+            <CWCard
+              key={item.key}
+              item={item}
+              onRemove={onRemove}
+              focusKey={cardKey(item)}
+              prevKey={i > 0            ? cardKey(items[i - 1]) : null}
+              nextKey={i < items.length-1 ? cardKey(items[i + 1]) : null}
+            />
           ))}
         </div>
-      </section>
-    </FocusContext.Provider>
+      </FocusContext.Provider>
+    </div>
   )
 }
 
