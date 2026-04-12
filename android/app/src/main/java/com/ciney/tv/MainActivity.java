@@ -18,7 +18,6 @@ import org.json.JSONObject;
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_NAME = "ciney_player_progress";
     private static final long SAVE_THROTTLE_MS = 7000L;
-    private static final String CHROME_TV_USER_AGENT = "Mozilla/5.0 (Linux; Android 11; AFTMM Build/PS7652.3754N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
     private WebView webView;
     private long lastSavedAtMs = 0L;
@@ -42,7 +41,6 @@ public class MainActivity extends BridgeActivity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         settings.setLoadsImagesAutomatically(true);
         settings.setOffscreenPreRaster(true);
-        settings.setUserAgentString(CHROME_TV_USER_AGENT);
 
         webView.addJavascriptInterface(new PlayerBridge(this), "CineyNative");
         webView.setWebChromeClient(new WebChromeClient());

@@ -49,7 +49,7 @@ export default function PlayerView() {
   const [hasPlayEvent, setHasPlayEvent] = useState(false)
   const [showSmartBuffer, setShowSmartBuffer] = useState(false)
   const [showRecovery, setShowRecovery] = useState(false)
-  const [sourceIndex, setSourceIndex] = useState(1)
+  const [sourceIndex, setSourceIndex] = useState(null)
   const [retryTick, setRetryTick] = useState(0)
 
   const iframeRef = useRef(null)
@@ -74,7 +74,7 @@ export default function PlayerView() {
       setHasPlayEvent(false)
       setShowSmartBuffer(false)
       setShowRecovery(false)
-      setSourceIndex(1)
+      setSourceIndex(null)
       setRetryTick(0)
       lastSavedAtRef.current = 0
     }
@@ -90,8 +90,12 @@ export default function PlayerView() {
   const src = useMemo(() => {
     if (!player) return null
     const url = new URL(buildPlayerUrl(player.mediaType, player.id, season, episode, startTime))
-    url.searchParams.set('source', String(sourceIndex))
-    url.searchParams.set('retry', String(retryTick))
+    if (sourceIndex !== null) {
+      url.searchParams.set('source', String(sourceIndex))
+    }
+    if (retryTick > 0) {
+      url.searchParams.set('retry', String(retryTick))
+    }
     return url.toString()
   }, [player, season, episode, startTime, sourceIndex, retryTick])
 
@@ -290,16 +294,16 @@ export default function PlayerView() {
                 canNext={hasSeasonData
                   ? validSeasons.some((s) => s.season_number > season)
                   : true}
-                onPrev={() => { setSeason((s) => s - 1); setEpisode(1); setSourceIndex(1) }}
-                onNext={() => { setSeason((s) => s + 1); setEpisode(1); setSourceIndex(1) }}
+                onPrev={() => { setSeason((s) => s - 1); setEpisode(1); setSourceIndex(null) }}
+                onNext={() => { setSeason((s) => s + 1); setEpisode(1); setSourceIndex(null) }}
               />
               <PVPicker
                 label="Episode"
                 value={episode}
                 canPrev={episode > 1}
                 canNext
-                onPrev={() => { setEpisode((e) => e - 1); setSourceIndex(1) }}
-                onNext={() => { setEpisode((e) => e + 1); setSourceIndex(1) }}
+                onPrev={() => { setEpisode((e) => e - 1); setSourceIndex(null) }}
+                onNext={() => { setEpisode((e) => e + 1); setSourceIndex(null) }}
               />
             </div>
           )}
