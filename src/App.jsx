@@ -21,12 +21,20 @@ function App() {
     trackChildren: true,
     focusable: false,
   })
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [showExitToast, setShowExitToast] = useState(false)
-  const [updateToast, setUpdateToast] = useState(null)
-  const lastBackPressRef = useRef(0)
+  const location          = useLocation()
+  const navigate          = useNavigate()
+  const [showExitToast,   setShowExitToast]  = useState(false)
+  const [updateToast,     setUpdateToast]    = useState(null)
+  const [navSolid,        setNavSolid]       = useState(false)
+  const lastBackPressRef  = useRef(0)
   const exitToastTimerRef = useRef(null)
+
+  /* ── Make navbar solid once user scrolls down ────────── */
+  useEffect(() => {
+    const onScroll = () => setNavSolid(window.scrollY > 80)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -107,10 +115,19 @@ function App() {
       await handleBackAction()
     })
 
+    /* ── Global keycodes for Firestick remote ──────────────
+       38 = Up     40 = Down   37 = Left   39 = Right
+       13 = Select 27 = Back/Escape
+    ─────────────────────────────────────────────────────── */
     const handleKeyDown = async (event) => {
-      if (event.keyCode === 4 || event.keyCode === 27) {
+      /* Back / Escape */
+      if (event.keyCode === 27 || event.keyCode === 4) {
         event.preventDefault()
         await handleBackAction()
+      }
+      /* Prevent default scroll on arrow keys so spatial nav handles them */
+      if ([37, 38, 39, 40].includes(event.keyCode)) {
+        event.preventDefault()
       }
     }
 
@@ -126,7 +143,7 @@ function App() {
   return (
     <FocusContext.Provider value={shellFocusKey}>
       <div ref={shellRef} className="app-shell">
-        <Navbar />
+        <Navbar solid={navSolid} />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />

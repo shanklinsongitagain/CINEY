@@ -33,7 +33,7 @@ function NavItem({ children, to, onEnterPress }) {
   )
 }
 
-function Navbar() {
+function Navbar({ solid = false }) {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
   const { ref, focusKey } = useFocusable({ trackChildren: true, focusKey: NAVBAR_FOCUS_KEY })
@@ -56,8 +56,8 @@ function Navbar() {
   })
 
   return (
-    <header className="site-header">
-      <div className="container nav-content">
+    <header className={`site-header${solid ? ' site-header--solid' : ''}`}>
+      <div className="nav-content">
         <Link to="/" className="brand-mark" tabIndex={-1}>
           <span className="brand-pill">C</span>
           <span>Ciney</span>
