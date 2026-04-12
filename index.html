@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;
+               img-src * data: blob:;
+               media-src *;
+               connect-src *;
+               frame-src https://www.vidking.net https://www.youtube.com;
+               child-src https://www.vidking.net https://www.youtube.com;" />
     <meta
       name="description"
       content="Ciney is a licensed streaming front end for browsing TMDB metadata and launching your configured player."

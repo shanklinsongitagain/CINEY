@@ -1,6 +1,7 @@
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { usePlayer } from '../context/PlayerContext'
 import {
   getBackdropUrl, getImageUrl, getMediaReleaseDate,
   getMediaTitle, getMovieDetails, getTvDetails,
@@ -23,6 +24,7 @@ function FBtn({ children, onEnterPress, primary = false, autoFocus = false }) {
 function MovieDetails({ mediaType }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { openPlayer } = usePlayer()
   const [media, setMedia] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -41,11 +43,18 @@ function MovieDetails({ mediaType }) {
   if (error)   return <main className="page"><div style={{ padding: '2rem 4vw' }}><p className="status-message status-message--error">{error}</p></div></main>
   if (!media)  return null
 
-  const watchUrl = mediaType === 'tv'
-    ? `/watch/tv/${media.id}?season=${media.seasons?.[0]?.season_number ?? 1}&episode=1`
-    : `/watch/movie/${media.id}`
+  const firstSeason = media.seasons?.find((s) => s.season_number > 0)?.season_number ?? 1
   const releaseDate = getMediaReleaseDate(media)
   const trailer = media.videos?.results?.find((v) => v.site === 'YouTube' && v.type === 'Trailer')
+
+  function handleWatch() {
+    openPlayer(media.id, mediaType, firstSeason, 1, {
+      title:        getMediaTitle(media),
+      posterPath:   media.poster_path   ?? '',
+      backdropPath: media.backdrop_path ?? '',
+      seasons:      media.seasons       ?? [],
+    })
+  }
 
   return (
     <FocusContext.Provider value={focusKey}>
@@ -88,7 +97,7 @@ function MovieDetails({ mediaType }) {
               <p>{media.overview || 'No overview available.'}</p>
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-                <FBtn primary autoFocus onEnterPress={() => navigate(watchUrl)}>▶ Watch Now</FBtn>
+                <FBtn primary autoFocus onEnterPress={handleWatch}>▶ Watch Now</FBtn>
                 <FBtn onEnterPress={() => navigate(-1)}>← Back</FBtn>
               </div>
             </div>

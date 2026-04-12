@@ -6,6 +6,100 @@
 ::-webkit-scrollbar { display: none; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ════════════════════════════════════════════════════════════════
+   PLAYER VIEW  — full-screen overlay, highest z-index
+   ════════════════════════════════════════════════════════════════ */
+.pv-shell {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #000;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* The iframe fills the whole viewport */
+.pv-frame {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border: none; display: block;
+}
+
+/* Loading spinner centred over the frame */
+.pv-spinner {
+  position: absolute; inset: 0; z-index: 1;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,.7);
+}
+
+.pv-spinner-ring {
+  width: 56px; height: 56px;
+  border: 5px solid rgba(255,255,255,.15);
+  border-top-color: #e50914;
+  border-radius: 50%;
+  animation: pvSpin 0.8s linear infinite;
+}
+
+@keyframes pvSpin { to { transform: rotate(360deg); } }
+
+/* Controls overlay — top + bottom bars */
+.pv-controls {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+/* Top bar */
+.pv-bar {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.5rem;
+  pointer-events: auto;
+}
+
+.pv-bar--top {
+  background: linear-gradient(180deg, rgba(0,0,0,.85) 0%, transparent 100%);
+}
+
+.pv-bar--bottom {
+  background: linear-gradient(0deg, rgba(0,0,0,.85) 0%, transparent 100%);
+  flex-wrap: wrap; gap: 0.75rem; padding: 1.25rem 1.5rem;
+}
+
+.pv-title {
+  flex: 1; font-size: 1.05rem; font-weight: 700; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Episode pickers inside the bottom bar */
+.pv-picker {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(255,255,255,.12);
+  border-radius: 6px; padding: 0.5rem 0.75rem;
+}
+
+.pv-picker-label {
+  min-width: 160px; max-width: 300px;
+  text-align: center; font-weight: 600; font-size: 0.88rem; color: #e5e5e5;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Control buttons */
+.pv-btn {
+  display: grid; place-items: center;
+  min-width: 38px; height: 38px; padding: 0 0.85rem;
+  background: rgba(255,255,255,.14);
+  border: 2px solid transparent; border-radius: 5px;
+  font-size: 1rem; font-weight: 700; color: #fff; cursor: pointer;
+  white-space: nowrap;
+}
+
+.pv-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* TV: kill spinner animation for perf */
+@media screen and (min-width: 1280px) {
+  .pv-spinner-ring { animation-duration: 1.2s; }
+}
+/* ══════════════════════════════════════════════════════════════ */
+
 /* ── App shell ──────────────────────────────────────────────── */
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; background-color: var(--bg); }
 

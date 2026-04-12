@@ -1,6 +1,6 @@
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { memo, useCallback, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { usePlayer } from '../context/PlayerContext'
 import { NAVBAR_FOCUS_KEY } from './Navbar'
 import { removeContinueWatchingItem } from '../lib/progress'
 import { getImageUrl } from '../lib/tmdb'
@@ -11,14 +11,19 @@ function fmt(s) {
 }
 
 function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
-  const navigate = useNavigate()
-  const watchPath = item.mediaType === 'tv'
-    ? `/watch/tv/${item.id}?season=${item.season ?? 1}&episode=${item.episode ?? 1}`
-    : `/watch/movie/${item.id}`
+  const { openPlayer } = usePlayer()
+
+  function handleResume() {
+    openPlayer(item.id, item.mediaType, item.season ?? 1, item.episode ?? 1, {
+      title:        item.title        ?? '',
+      posterPath:   item.posterPath   ?? '',
+      backdropPath: item.backdropPath ?? '',
+    })
+  }
 
   const { ref, focused } = useFocusable({
     focusKey,
-    onEnterPress: () => navigate(watchPath),
+    onEnterPress: handleResume,
     onArrowPress: (dir) => {
       if (dir === 'left'  && prevKey) { setFocus(prevKey); return false }
       if (dir === 'right' && nextKey) { setFocus(nextKey); return false }
@@ -37,7 +42,7 @@ function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
       ref={ref}
       tabIndex={0}
       className={`continue-card${focused ? ' spatial-focused' : ''}`}
-      onClick={() => navigate(watchPath)}
+      onClick={handleResume}
     >
       {item.posterPath ? (
         <img src={getImageUrl(item.posterPath)} alt={item.title} className="continue-card-poster" loading="lazy" />
@@ -51,8 +56,12 @@ function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
           {fmt(item.progress)}
           {' · '}
           <span
-            style={{ color: '#aaa', cursor: 'pointer' }}
-            onClick={(e) => { e.stopPropagation(); removeContinueWatchingItem(item); onRemove?.(item.key) }}
+            style={{ color: '#888', cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              removeContinueWatchingItem(item)
+              onRemove?.(item.key)
+            }}
           >
             Remove
           </span>
@@ -83,8 +92,8 @@ function ContinueWatching({ items, onRemove }) {
               item={item}
               onRemove={onRemove}
               focusKey={cardKey(item)}
-              prevKey={i > 0            ? cardKey(items[i - 1]) : null}
-              nextKey={i < items.length-1 ? cardKey(items[i + 1]) : null}
+              prevKey={i > 0               ? cardKey(items[i - 1]) : null}
+              nextKey={i < items.length - 1 ? cardKey(items[i + 1]) : null}
             />
           ))}
         </div>
