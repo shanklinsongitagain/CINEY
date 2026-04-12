@@ -1,5 +1,6 @@
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import PlayerFrame from '../components/PlayerFrame'
 import {
   getBackdropUrl,
@@ -9,12 +10,46 @@ import {
   getTvSeasonDetails,
 } from '../lib/tmdb'
 
+function FocusableLink({ to, className, children, autoFocus }) {
+  const navigate = useNavigate()
+  const { ref, focused, focusSelf } = useFocusable({ onEnterPress: () => navigate(to) })
+
+  useEffect(() => {
+    if (autoFocus) focusSelf()
+  }, [autoFocus, focusSelf])
+
+  return (
+    <Link ref={ref} to={to} className={`${className}${focused ? ' spatial-focused' : ''}`} tabIndex={0}>
+      {children}
+    </Link>
+  )
+}
+
+function FocusableSelect({ value, onChange, children }) {
+  const { ref, focused } = useFocusable()
+  return (
+    <select
+      ref={ref}
+      value={value}
+      onChange={onChange}
+      className={focused ? 'spatial-focused' : ''}
+    >
+      {children}
+    </select>
+  )
+}
+
 function Watch({ mediaType }) {
   const { id } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const [media, setMedia] = useState(null)
   const [seasonDetails, setSeasonDetails] = useState(null)
   const [error, setError] = useState('')
+
+  const { ref: pageRef, focusKey: pageFocusKey } = useFocusable({
+    trackChildren: true,
+    focusable: false,
+  })
 
   const selectedSeason = Number(searchParams.get('season') ?? 1)
   const selectedEpisode = Number(searchParams.get('episode') ?? 1)
@@ -108,73 +143,75 @@ function Watch({ mediaType }) {
     : undefined
 
   return (
-    <main className="page container page--watch">
-      <section className="watch-page-header watch-page-header--hero" style={heroStyle}>
-        <div className="watch-page-header-content">
-          <p className="eyebrow">Now watching</p>
-          <h1 className="watch-title">{media ? getMediaTitle(media) : 'Loading…'}</h1>
-          {mediaType === 'tv' && currentEpisode ? (
-            <p className="watch-subtitle">
-              Season {selectedSeason} • Episode {selectedEpisode} • {currentEpisode.name}
-            </p>
-          ) : null}
-        </div>
-        <div className="watch-header-actions">
-          <Link to={detailsUrl} className="secondary-button">
-            Details
-          </Link>
-          <Link to="/" className="secondary-button">
-            Home
-          </Link>
-        </div>
-      </section>
+    <FocusContext.Provider value={pageFocusKey}>
+      <main ref={pageRef} className="page container page--watch">
+        <section className="watch-page-header watch-page-header--hero" style={heroStyle}>
+          <div className="watch-page-header-content">
+            <p className="eyebrow">Now watching</p>
+            <h1 className="watch-title">{media ? getMediaTitle(media) : 'Loading…'}</h1>
+            {mediaType === 'tv' && currentEpisode ? (
+              <p className="watch-subtitle">
+                Season {selectedSeason} • Episode {selectedEpisode} • {currentEpisode.name}
+              </p>
+            ) : null}
+          </div>
+          <div className="watch-header-actions">
+            <FocusableLink to={detailsUrl} className="secondary-button" autoFocus>
+              Details
+            </FocusableLink>
+            <FocusableLink to="/" className="secondary-button">
+              Home
+            </FocusableLink>
+          </div>
+        </section>
 
-      <section className="watch-layout watch-layout--single">
-        <div>
-          <PlayerFrame
-            mediaType={mediaType}
-            id={id}
-            season={selectedSeason}
-            episode={selectedEpisode}
-            media={media}
-            episodeDetails={currentEpisode}
-          />
-        </div>
-      </section>
+        <section className="watch-layout watch-layout--single">
+          <div>
+            <PlayerFrame
+              mediaType={mediaType}
+              id={id}
+              season={selectedSeason}
+              episode={selectedEpisode}
+              media={media}
+              episodeDetails={currentEpisode}
+            />
+          </div>
+        </section>
 
-      <section className="watch-details-panel">
-        {error ? <p className="status-message status-message--error">{error}</p> : null}
-        {!error ? <p>{currentEpisode?.overview || media?.overview || 'Loading overview…'}</p> : null}
+        <section className="watch-details-panel">
+          {error ? <p className="status-message status-message--error">{error}</p> : null}
+          {!error ? <p>{currentEpisode?.overview || media?.overview || 'Loading overview…'}</p> : null}
 
-        {mediaType === 'tv' && media ? (
-          <div className="episode-picker-grid">
-            <label className="picker-card">
-              <span>Season</span>
-              <select value={selectedSeason} onChange={handleSeasonChange}>
-                {(media.seasons ?? [])
-                  .filter((season) => season.season_number > 0)
-                  .map((season) => (
-                    <option key={season.id} value={season.season_number}>
-                      Season {season.season_number}
+          {mediaType === 'tv' && media ? (
+            <div className="episode-picker-grid">
+              <label className="picker-card">
+                <span>Season</span>
+                <FocusableSelect value={selectedSeason} onChange={handleSeasonChange}>
+                  {(media.seasons ?? [])
+                    .filter((season) => season.season_number > 0)
+                    .map((season) => (
+                      <option key={season.id} value={season.season_number}>
+                        Season {season.season_number}
+                      </option>
+                    ))}
+                </FocusableSelect>
+              </label>
+
+              <label className="picker-card picker-card--wide">
+                <span>Episode</span>
+                <FocusableSelect value={selectedEpisode} onChange={handleEpisodeChange}>
+                  {(seasonDetails?.episodes ?? []).map((entry) => (
+                    <option key={entry.id} value={entry.episode_number}>
+                      Episode {entry.episode_number}: {entry.name}
                     </option>
                   ))}
-              </select>
-            </label>
-
-            <label className="picker-card picker-card--wide">
-              <span>Episode</span>
-              <select value={selectedEpisode} onChange={handleEpisodeChange}>
-                {(seasonDetails?.episodes ?? []).map((entry) => (
-                  <option key={entry.id} value={entry.episode_number}>
-                    Episode {entry.episode_number}: {entry.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        ) : null}
-      </section>
-    </main>
+                </FocusableSelect>
+              </label>
+            </div>
+          ) : null}
+        </section>
+      </main>
+    </FocusContext.Provider>
   )
 }
 

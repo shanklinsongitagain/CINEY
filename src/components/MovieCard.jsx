@@ -12,8 +12,8 @@ function MovieCard({ movie }) {
   const { ref, focused } = useFocusable({ onEnterPress: () => navigate(watchPath) })
 
   return (
-    <article ref={ref} className={`movie-card${focused ? ' spatial-focused' : ''}`}>
-      <Link to={watchPath} className="movie-card-link">
+    <article ref={ref} tabIndex={0} className={`movie-card${focused ? ' spatial-focused' : ''}`}>
+      <Link to={watchPath} className="movie-card-link" tabIndex={-1}>
         {posterUrl ? (
           <img src={posterUrl} alt={getMediaTitle(movie)} className="movie-poster" loading="lazy" />
         ) : (
@@ -25,10 +25,10 @@ function MovieCard({ movie }) {
         </div>
       </Link>
       <div className="movie-card-actions">
-        <Link to={watchPath} className="watch-link">
+        <Link to={watchPath} className="watch-link" tabIndex={-1}>
           Play
         </Link>
-        <Link to={`/${mediaType}/${movie.id}`} className="secondary-button details-link">
+        <Link to={`/${mediaType}/${movie.id}`} className="secondary-button details-link" tabIndex={-1}>
           Details
         </Link>
       </div>

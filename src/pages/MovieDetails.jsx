@@ -1,5 +1,6 @@
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getBackdropUrl,
   getImageUrl,
@@ -9,11 +10,31 @@ import {
   getTvDetails,
 } from '../lib/tmdb'
 
+function FocusableWatchLink({ to, className, children }) {
+  const navigate = useNavigate()
+  const { ref, focused, focusSelf } = useFocusable({ onEnterPress: () => navigate(to) })
+
+  useEffect(() => {
+    focusSelf()
+  }, [focusSelf])
+
+  return (
+    <Link ref={ref} to={to} className={`${className}${focused ? ' spatial-focused' : ''}`} tabIndex={0}>
+      {children}
+    </Link>
+  )
+}
+
 function MovieDetails({ mediaType }) {
   const { id } = useParams()
   const [media, setMedia] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+
+  const { ref: pageRef, focusKey: pageFocusKey } = useFocusable({
+    trackChildren: true,
+    focusable: false,
+  })
 
   useEffect(() => {
     let active = true
@@ -73,68 +94,70 @@ function MovieDetails({ mediaType }) {
       : `/watch/movie/${media.id}`
 
   return (
-    <main className="page container">
-      <section className="detail-hero">
-        <div className="detail-backdrop">
-          {media.backdrop_path ? <img src={getBackdropUrl(media.backdrop_path)} alt="" /> : null}
-        </div>
-        <div className="detail-grid">
-          <div>
-            {media.poster_path ? (
-              <img src={getImageUrl(media.poster_path)} alt={getMediaTitle(media)} className="detail-poster" />
-            ) : null}
+    <FocusContext.Provider value={pageFocusKey}>
+      <main ref={pageRef} className="page container">
+        <section className="detail-hero">
+          <div className="detail-backdrop">
+            {media.backdrop_path ? <img src={getBackdropUrl(media.backdrop_path)} alt="" /> : null}
           </div>
-          <div className="detail-copy">
-            <p className="eyebrow">{mediaType === 'tv' ? 'TV series' : 'Movie'} details</p>
-            <h1>{getMediaTitle(media)}</h1>
-            <div className="detail-meta">
-              <span>{releaseDate ? new Date(releaseDate).getFullYear() : 'TBA'}</span>
-              <span>
-                {mediaType === 'tv'
-                  ? `${seasonsCount ?? 0} season${seasonsCount === 1 ? '' : 's'}`
-                  : media.runtime
-                    ? `${media.runtime} min`
-                    : 'Runtime unavailable'}
-              </span>
-              <span>{media.vote_average ? `${media.vote_average.toFixed(1)} / 10` : 'No rating yet'}</span>
-            </div>
-            <p>{media.overview || 'No overview is available for this title.'}</p>
-            {media.genres?.length ? (
-              <div className="genre-list">
-                {media.genres.map((genre) => (
-                  <span key={genre.id}>{genre.name}</span>
-                ))}
-              </div>
-            ) : null}
-            <div className="hero-actions">
-              <Link to={watchUrl} className="primary-button">
-                Watch now
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {trailer ? (
-        <section className="section-block section-block--compact">
-          <div className="section-heading">
+          <div className="detail-grid">
             <div>
-              <p className="eyebrow">Trailer</p>
-              <h2>Official preview</h2>
+              {media.poster_path ? (
+                <img src={getImageUrl(media.poster_path)} alt={getMediaTitle(media)} className="detail-poster" />
+              ) : null}
             </div>
-          </div>
-          <div className="player-shell">
-            <iframe
-              title={`${getMediaTitle(media)} trailer`}
-              src={`https://www.youtube.com/embed/${trailer.key}`}
-              className="player-frame"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            <div className="detail-copy">
+              <p className="eyebrow">{mediaType === 'tv' ? 'TV series' : 'Movie'} details</p>
+              <h1>{getMediaTitle(media)}</h1>
+              <div className="detail-meta">
+                <span>{releaseDate ? new Date(releaseDate).getFullYear() : 'TBA'}</span>
+                <span>
+                  {mediaType === 'tv'
+                    ? `${seasonsCount ?? 0} season${seasonsCount === 1 ? '' : 's'}`
+                    : media.runtime
+                      ? `${media.runtime} min`
+                      : 'Runtime unavailable'}
+                </span>
+                <span>{media.vote_average ? `${media.vote_average.toFixed(1)} / 10` : 'No rating yet'}</span>
+              </div>
+              <p>{media.overview || 'No overview is available for this title.'}</p>
+              {media.genres?.length ? (
+                <div className="genre-list">
+                  {media.genres.map((genre) => (
+                    <span key={genre.id}>{genre.name}</span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="hero-actions">
+                <FocusableWatchLink to={watchUrl} className="primary-button">
+                  Watch now
+                </FocusableWatchLink>
+              </div>
+            </div>
           </div>
         </section>
-      ) : null}
-    </main>
+
+        {trailer ? (
+          <section className="section-block section-block--compact">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Trailer</p>
+                <h2>Official preview</h2>
+              </div>
+            </div>
+            <div className="player-shell">
+              <iframe
+                title={`${getMediaTitle(media)} trailer`}
+                src={`https://www.youtube.com/embed/${trailer.key}`}
+                className="player-frame"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        ) : null}
+      </main>
+    </FocusContext.Provider>
   )
 }
 

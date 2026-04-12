@@ -1,3 +1,4 @@
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { App as CapacitorApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { useEffect, useRef, useState } from 'react'
@@ -16,6 +17,10 @@ initializeSpatialNavigation()
 const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0-local'
 
 function App() {
+  const { ref: shellRef, focusKey: shellFocusKey } = useFocusable({
+    trackChildren: true,
+    focusable: false,
+  })
   const location = useLocation()
   const navigate = useNavigate()
   const [showExitToast, setShowExitToast] = useState(false)
@@ -119,30 +124,32 @@ function App() {
   }, [location.pathname, navigate])
 
   return (
-    <div className="app-shell">
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/movie/:id" element={<MovieDetails mediaType="movie" />} />
-        <Route path="/tv/:id" element={<MovieDetails mediaType="tv" />} />
-        <Route path="/watch/movie/:id" element={<Watch mediaType="movie" />} />
-        <Route path="/watch/tv/:id" element={<Watch mediaType="tv" />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+    <FocusContext.Provider value={shellFocusKey}>
+      <div ref={shellRef} className="app-shell">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/movie/:id" element={<MovieDetails mediaType="movie" />} />
+          <Route path="/tv/:id" element={<MovieDetails mediaType="tv" />} />
+          <Route path="/watch/movie/:id" element={<Watch mediaType="movie" />} />
+          <Route path="/watch/tv/:id" element={<Watch mediaType="tv" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
-      {showExitToast ? <div className="exit-toast">Press back again to exit</div> : null}
-      {updateToast ? (
-        <div className="update-toast">
-          <span>{updateToast.message}</span>
-          {updateToast.url ? (
-            <a href={updateToast.url} target="_blank" rel="noreferrer">
-              Release
-            </a>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+        {showExitToast ? <div className="exit-toast">Press back again to exit</div> : null}
+        {updateToast ? (
+          <div className="update-toast">
+            <span>{updateToast.message}</span>
+            {updateToast.url ? (
+              <a href={updateToast.url} target="_blank" rel="noreferrer">
+                Release
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </FocusContext.Provider>
   )
 }
 

@@ -10,6 +10,7 @@ export function initializeSpatialNavigation() {
   init({
     debug: false,
     visualDebug: false,
+    shouldFocusDOMNode: true,
   })
 
   initialized = true

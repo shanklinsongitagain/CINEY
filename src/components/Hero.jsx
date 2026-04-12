@@ -1,4 +1,4 @@
-import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { Link, useNavigate } from 'react-router-dom'
 import { getBackdropUrl, getMediaTitle, getMediaType } from '../lib/tmdb'
 
@@ -15,6 +15,11 @@ function FocusableAction({ children, to, primary = false }) {
 }
 
 function Hero({ movie }) {
+  const { ref: heroRef, focusKey: heroFocusKey } = useFocusable({
+    trackChildren: true,
+    focusable: false,
+  })
+
   if (!movie) {
     return null
   }
@@ -27,21 +32,23 @@ function Hero({ movie }) {
     : undefined
 
   return (
-    <section className="hero-banner" style={{ backgroundImage }}>
-      <div className="hero-copy">
-        <p className="eyebrow">Trending now</p>
-        <h1>{getMediaTitle(movie)}</h1>
-        <p className="hero-description">{movie.overview || 'Browse your licensed catalog and start playback.'}</p>
-        <div className="hero-actions">
-          <FocusableAction to={watchPath} primary>
-            Watch now
-          </FocusableAction>
-          <FocusableAction to={`/${mediaType}/${movie.id}`}>
-            Details
-          </FocusableAction>
+    <FocusContext.Provider value={heroFocusKey}>
+      <section ref={heroRef} className="hero-banner" style={{ backgroundImage }}>
+        <div className="hero-copy">
+          <p className="eyebrow">Trending now</p>
+          <h1>{getMediaTitle(movie)}</h1>
+          <p className="hero-description">{movie.overview || 'Browse your licensed catalog and start playback.'}</p>
+          <div className="hero-actions">
+            <FocusableAction to={watchPath} primary>
+              Watch now
+            </FocusableAction>
+            <FocusableAction to={`/${mediaType}/${movie.id}`}>
+              Details
+            </FocusableAction>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </FocusContext.Provider>
   )
 }
 

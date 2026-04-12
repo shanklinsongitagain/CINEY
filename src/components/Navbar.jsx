@@ -27,21 +27,24 @@ function Navbar() {
   const { ref, focusKey } = useFocusable({ trackChildren: true })
 
   const handleSubmit = (event) => {
-    event.preventDefault()
-
+    if (event?.preventDefault) event.preventDefault()
     const trimmedQuery = query.trim()
     if (!trimmedQuery) {
       navigate('/search')
       return
     }
-
     navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`)
   }
+
+  const { ref: searchInputRef, focused: searchInputFocused } = useFocusable()
+  const { ref: searchBtnRef, focused: searchBtnFocused } = useFocusable({
+    onEnterPress: handleSubmit,
+  })
 
   return (
     <header className="site-header">
       <div className="container nav-content">
-        <Link to="/" className="brand-mark">
+        <Link to="/" className="brand-mark" tabIndex={-1}>
           <span className="brand-pill">C</span>
           <span>Ciney</span>
         </Link>
@@ -65,13 +68,21 @@ function Navbar() {
 
         <form className="search-form" onSubmit={handleSubmit}>
           <input
+            ref={searchInputRef}
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search movies or shows"
             aria-label="Search movies or shows"
+            className={searchInputFocused ? 'spatial-focused' : ''}
           />
-          <button type="submit">Go</button>
+          <button
+            ref={searchBtnRef}
+            type="submit"
+            className={searchBtnFocused ? 'spatial-focused' : ''}
+          >
+            Go
+          </button>
         </form>
       </div>
     </header>
