@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
           cache: npm
 
       - name: Setup Java 21
@@ -61,6 +61,13 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Delete existing release tag (allow re-publish)
+        run: |
+          gh release delete latest-firestick-build --yes || true
+          git push --delete origin latest-firestick-build || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -69,5 +76,10 @@ jobs:
           files: android/app/build/outputs/apk/debug/app-debug.apk
           body: |
             Automated Firestick-ready debug APK built from the latest push to main.
-          prerelease: true
+
+            **Install on Firestick:**
+            1. Open the Downloader app
+            2. Enter the short URL from `npm run get-link`
+            3. Install the APK and enjoy Ciney!
           make_latest: true
+          token: ${{ secrets.GITHUB_TOKEN }}

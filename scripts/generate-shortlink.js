@@ -32,15 +32,29 @@ if (!githubRepo) {
   process.exit(1)
 }
 
+const RELEASE_TAG = 'latest-firestick-build'
+
 async function getLatestApkUrl() {
-  const response = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'User-Agent': 'ciney-shortlink-generator',
-    },
-  })
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'ciney-shortlink-generator',
+  }
+
+  // Try /releases/latest first (works for non-prerelease)
+  let response = await fetch(`https://api.github.com/repos/${githubRepo}/releases/latest`, { headers })
+
+  // Fall back to the known tag if latest returns 404 (release marked as prerelease or doesn't exist yet)
+  if (response.status === 404) {
+    response = await fetch(`https://api.github.com/repos/${githubRepo}/releases/tags/${RELEASE_TAG}`, { headers })
+  }
 
   if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(
+        `No release found yet for "${githubRepo}". ` +
+        `Push to main to trigger the GitHub Actions build, then run this command again once the build finishes.`
+      )
+    }
     throw new Error(`GitHub API request failed with status ${response.status}`)
   }
 
@@ -48,7 +62,7 @@ async function getLatestApkUrl() {
   const apkAsset = (release.assets ?? []).find((asset) => asset.name === 'app-debug.apk')
 
   if (!apkAsset?.browser_download_url) {
-    throw new Error('Could not find app-debug.apk in the latest release assets.')
+    throw new Error('Could not find app-debug.apk in the latest release assets. The GitHub Actions build may still be running.')
   }
 
   return apkAsset.browser_download_url
