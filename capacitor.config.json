@@ -1,0 +1,10 @@
+{
+  "appId": "com.ciney.tv",
+  "appName": "Ciney",
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": [
+      "www.vidking.net"
+    ]
+  }
+}

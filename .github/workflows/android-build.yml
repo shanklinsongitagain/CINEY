@@ -1,0 +1,65 @@
+name: Android Firestick Build
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create environment file
+        run: |
+          cat <<EOF > .env
+          VITE_TMDB_API_KEY=${{ secrets.VITE_TMDB_API_KEY }}
+          VITE_PLAYER_BASE_URL=${{ secrets.VITE_PLAYER_BASE_URL }}
+          VITE_PLAYER_ALLOWED_ORIGIN=${{ secrets.VITE_PLAYER_ALLOWED_ORIGIN }}
+          VITE_GITHUB_REPO=${{ github.repository }}
+          EOF
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor Android
+        run: npm run android:sync
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-firestick-build
+          name: Latest Firestick Build
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          body: |
+            Automated Firestick-ready debug APK built from the latest push to main.
+          prerelease: true
+          make_latest: true
