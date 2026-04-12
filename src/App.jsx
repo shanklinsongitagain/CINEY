@@ -73,7 +73,29 @@ function AppInner() {
       }, 2000)
     }
 
+    async function tryExitFullscreen() {
+      if (document.fullscreenElement) {
+        try {
+          await document.exitFullscreen()
+          return true
+        } catch {
+          return false
+        }
+      }
+
+      if (window.CineyNativeBridge?.exitFullscreen) {
+        try {
+          return Boolean(await window.CineyNativeBridge.exitFullscreen())
+        } catch {
+          return false
+        }
+      }
+
+      return false
+    }
+
     async function handleBackAction() {
+      if (await tryExitFullscreen()) return true
       if (player) { closePlayer(); return true }
 
       const pathname = location.pathname

@@ -29,6 +29,8 @@
   background: rgba(0,0,0,.7);
 }
 
+.pv-spinner--smart { z-index: 3; background: rgba(0,0,0,.45); }
+
 .pv-spinner-ring {
   width: 56px; height: 56px;
   border: 5px solid rgba(255,255,255,.15);
@@ -45,7 +47,8 @@
   display: flex; flex-direction: column;
   justify-content: space-between;
   pointer-events: none;
-  transition: opacity 0.25s;
+  transition: opacity 0.28s ease;
+  padding: 5vh 5vw;
 }
 
 /* Top bar */
@@ -74,6 +77,19 @@
   display: flex; align-items: center; gap: 0.5rem;
   background: rgba(255,255,255,.12);
   border-radius: 6px; padding: 0.5rem 0.75rem;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.pv-picker:focus-within {
+  border-color: rgba(255,255,255,0.95);
+  box-shadow: 0 0 0 3px rgba(229,9,20,0.8), 0 0 26px rgba(229,9,20,0.5);
+  background: rgba(255,255,255,.2);
+}
+
+.pv-picker--episode:focus-within {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.9), 0 0 28px rgba(229,9,20,0.6);
 }
 
 .pv-picker-label {
@@ -93,6 +109,32 @@
 }
 
 .pv-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+.pv-btn.spatial-focused {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(229,9,20,.82), 0 0 22px rgba(229,9,20,.55);
+  transform: scale(1.04);
+}
+
+.pv-recovery {
+  position: absolute;
+  left: 5vw;
+  right: 5vw;
+  bottom: 5vh;
+  z-index: 4;
+  background: rgba(0,0,0,0.86);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.pv-recovery-title { margin: 0; color: #fff; font-weight: 700; }
+.pv-recovery-subtitle { margin: 0.4rem 0 0.85rem; color: #d1d5db; }
+
+.pv-recovery-actions {
+  display: flex;
+  gap: 0.75rem;
+}
 
 /* TV: kill spinner animation for perf */
 @media screen and (min-width: 1280px) {
