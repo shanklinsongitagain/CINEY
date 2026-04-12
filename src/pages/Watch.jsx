@@ -1,54 +1,56 @@
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { memo, useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import PlayerFrame from '../components/PlayerFrame'
+import { NAVBAR_FOCUS_KEY } from '../components/Navbar'
+import { setFocus } from '@noriginmedia/norigin-spatial-navigation'
 import {
-  getBackdropUrl,
-  getMediaTitle,
-  getMovieDetails,
-  getTvDetails,
-  getTvSeasonDetails,
+  getBackdropUrl, getMediaTitle,
+  getMovieDetails, getTvDetails, getTvSeasonDetails,
 } from '../lib/tmdb'
 
-function FocusableLink({ to, className, children, autoFocus }) {
-  const navigate = useNavigate()
-  const { ref, focused, focusSelf } = useFocusable({ onEnterPress: () => navigate(to) })
-
-  useEffect(() => {
-    if (autoFocus) focusSelf()
-  }, [autoFocus, focusSelf])
-
+/* ── Small focusable button ─────────────────────────────── */
+function TVBtn({ children, onEnterPress, disabled = false, autoFocus = false, className = '' }) {
+  const { ref, focused, focusSelf } = useFocusable({
+    onEnterPress: disabled ? undefined : onEnterPress,
+  })
+  useEffect(() => { if (autoFocus) focusSelf() }, [autoFocus, focusSelf])
   return (
-    <Link ref={ref} to={to} className={`${className}${focused ? ' spatial-focused' : ''}`} tabIndex={0}>
-      {children}
-    </Link>
-  )
-}
-
-function FocusableSelect({ value, onChange, children }) {
-  const { ref, focused } = useFocusable()
-  return (
-    <select
+    <button
       ref={ref}
-      value={value}
-      onChange={onChange}
-      className={focused ? 'spatial-focused' : ''}
+      type="button"
+      tabIndex={0}
+      disabled={disabled}
+      className={`tv-btn${focused ? ' spatial-focused' : ''} ${className}`}
+      onClick={disabled ? undefined : onEnterPress}
     >
       {children}
-    </select>
+    </button>
   )
 }
 
+/* ── Arrow picker row: ‹ Label › ────────────────────────── */
+function TVArrowPicker({ label, value, onPrev, onNext, canPrev, canNext }) {
+  return (
+    <div className="tv-arrow-picker">
+      <TVBtn onEnterPress={onPrev} disabled={!canPrev}>‹</TVBtn>
+      <span className="tv-arrow-label">{label}: {value}</span>
+      <TVBtn onEnterPress={onNext} disabled={!canNext}>›</TVBtn>
+    </div>
+  )
+}
+
+/* ── Watch page ─────────────────────────────────────────── */
 function Watch({ mediaType }) {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [media, setMedia] = useState(null)
   const [seasonDetails, setSeasonDetails] = useState(null)
   const [error, setError] = useState('')
 
   const { ref: pageRef, focusKey: pageFocusKey } = useFocusable({
-    trackChildren: true,
-    focusable: false,
+    trackChildren: true, focusable: false,
   })
 
   const selectedSeason = Number(searchParams.get('season') ?? 1)
@@ -56,160 +58,133 @@ function Watch({ mediaType }) {
 
   useEffect(() => {
     let active = true
-
-    async function loadMedia() {
+    async function load() {
       try {
-        const details = mediaType === 'tv' ? await getTvDetails(id) : await getMovieDetails(id)
-        if (active) {
-          setMedia(details)
-          setError('')
-        }
-      } catch (loadError) {
-        if (active) {
-          setError(loadError.message)
-        }
-      }
+        const d = mediaType === 'tv' ? await getTvDetails(id) : await getMovieDetails(id)
+        if (active) { setMedia(d); setError('') }
+      } catch (e) { if (active) setError(e.message) }
     }
-
-    loadMedia()
-    return () => {
-      active = false
-    }
+    load()
+    return () => { active = false }
   }, [id, mediaType])
 
   useEffect(() => {
-    if (mediaType !== 'tv') {
-      return
-    }
-
+    if (mediaType !== 'tv') return
     let active = true
-
     async function loadSeason() {
       try {
-        const details = await getTvSeasonDetails(id, selectedSeason)
-        if (active) {
-          setSeasonDetails(details)
-          setError('')
-        }
-      } catch (loadError) {
-        if (active) {
-          setError(loadError.message)
-        }
-      }
+        const d = await getTvSeasonDetails(id, selectedSeason)
+        if (active) { setSeasonDetails(d); setError('') }
+      } catch (e) { if (active) setError(e.message) }
     }
-
     loadSeason()
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [id, mediaType, selectedSeason])
 
-  useEffect(() => {
-    if (mediaType !== 'tv' || !seasonDetails?.episodes?.length) {
-      return
-    }
-
-    const episodeExists = seasonDetails.episodes.some((entry) => entry.episode_number === selectedEpisode)
-    if (!episodeExists) {
-      const nextParams = new URLSearchParams(searchParams)
-      nextParams.set('episode', String(seasonDetails.episodes[0].episode_number))
-      setSearchParams(nextParams, { replace: true })
-    }
-  }, [mediaType, searchParams, seasonDetails, selectedEpisode, setSearchParams])
-
-  const currentEpisode = useMemo(
-    () => seasonDetails?.episodes?.find((entry) => entry.episode_number === selectedEpisode),
-    [seasonDetails, selectedEpisode],
+  const sortedEpisodes = useMemo(
+    () => [...(seasonDetails?.episodes ?? [])].sort((a, b) => a.episode_number - b.episode_number),
+    [seasonDetails],
   )
 
-  const handleSeasonChange = (event) => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.set('season', event.target.value)
-    nextParams.set('episode', '1')
-    setSearchParams(nextParams)
+  const currentEpisode = useMemo(
+    () => sortedEpisodes.find((e) => e.episode_number === selectedEpisode),
+    [sortedEpisodes, selectedEpisode],
+  )
+
+  const validSeasons = useMemo(
+    () => (media?.seasons ?? []).filter((s) => s.season_number > 0),
+    [media],
+  )
+
+  const prevEpNum = useMemo(
+    () => [...sortedEpisodes].reverse().find((e) => e.episode_number < selectedEpisode)?.episode_number,
+    [sortedEpisodes, selectedEpisode],
+  )
+  const nextEpNum = useMemo(
+    () => sortedEpisodes.find((e) => e.episode_number > selectedEpisode)?.episode_number,
+    [sortedEpisodes, selectedEpisode],
+  )
+
+  function setEpisode(ep) {
+    const p = new URLSearchParams(searchParams)
+    p.set('episode', String(ep))
+    setSearchParams(p)
+  }
+  function setSeason(s) {
+    const p = new URLSearchParams(searchParams)
+    p.set('season', String(s))
+    p.set('episode', '1')
+    setSearchParams(p)
   }
 
-  const handleEpisodeChange = (event) => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.set('episode', event.target.value)
-    setSearchParams(nextParams)
-  }
-
-  const detailsUrl = `/${mediaType}/${id}`
   const heroStyle = media?.backdrop_path
-    ? {
-        backgroundImage: `linear-gradient(180deg, rgba(5, 7, 13, 0.10), rgba(5, 7, 13, 0.95)), url(${getBackdropUrl(media.backdrop_path)})`,
-      }
+    ? { backgroundImage: `linear-gradient(180deg,rgba(5,7,13,.1),rgba(5,7,13,.92)),url(${getBackdropUrl(media.backdrop_path)})` }
     : undefined
 
   return (
     <FocusContext.Provider value={pageFocusKey}>
       <main ref={pageRef} className="page container page--watch">
-        <section className="watch-page-header watch-page-header--hero" style={heroStyle}>
+
+        {/* Header with back/details buttons */}
+        <section className="watch-page-header" style={heroStyle}>
           <div className="watch-page-header-content">
             <p className="eyebrow">Now watching</p>
             <h1 className="watch-title">{media ? getMediaTitle(media) : 'Loading…'}</h1>
-            {mediaType === 'tv' && currentEpisode ? (
+            {mediaType === 'tv' && currentEpisode && (
               <p className="watch-subtitle">
-                Season {selectedSeason} • Episode {selectedEpisode} • {currentEpisode.name}
+                S{selectedSeason} · E{selectedEpisode} · {currentEpisode.name}
               </p>
-            ) : null}
+            )}
           </div>
           <div className="watch-header-actions">
-            <FocusableLink to={detailsUrl} className="secondary-button" autoFocus>
-              Details
-            </FocusableLink>
-            <FocusableLink to="/" className="secondary-button">
-              Home
-            </FocusableLink>
+            <TVBtn autoFocus onEnterPress={() => navigate(`/${mediaType}/${id}`)}>ⓘ Details</TVBtn>
+            <TVBtn
+              onEnterPress={() => setFocus(NAVBAR_FOCUS_KEY)}
+            >
+              ☰ Menu
+            </TVBtn>
           </div>
         </section>
 
-        <section className="watch-layout watch-layout--single">
-          <div>
-            <PlayerFrame
-              mediaType={mediaType}
-              id={id}
-              season={selectedSeason}
-              episode={selectedEpisode}
-              media={media}
-              episodeDetails={currentEpisode}
-            />
-          </div>
+        {/* Player */}
+        <section className="watch-layout">
+          <PlayerFrame
+            mediaType={mediaType}
+            id={id}
+            season={selectedSeason}
+            episode={selectedEpisode}
+            media={media}
+            episodeDetails={currentEpisode}
+          />
         </section>
 
+        {/* Overview + episode picker */}
         <section className="watch-details-panel">
-          {error ? <p className="status-message status-message--error">{error}</p> : null}
-          {!error ? <p>{currentEpisode?.overview || media?.overview || 'Loading overview…'}</p> : null}
+          {error && <p className="status-message status-message--error">{error}</p>}
+          {!error && <p>{currentEpisode?.overview || media?.overview || ''}</p>}
 
-          {mediaType === 'tv' && media ? (
-            <div className="episode-picker-grid">
-              <label className="picker-card">
-                <span>Season</span>
-                <FocusableSelect value={selectedSeason} onChange={handleSeasonChange}>
-                  {(media.seasons ?? [])
-                    .filter((season) => season.season_number > 0)
-                    .map((season) => (
-                      <option key={season.id} value={season.season_number}>
-                        Season {season.season_number}
-                      </option>
-                    ))}
-                </FocusableSelect>
-              </label>
-
-              <label className="picker-card picker-card--wide">
-                <span>Episode</span>
-                <FocusableSelect value={selectedEpisode} onChange={handleEpisodeChange}>
-                  {(seasonDetails?.episodes ?? []).map((entry) => (
-                    <option key={entry.id} value={entry.episode_number}>
-                      Episode {entry.episode_number}: {entry.name}
-                    </option>
-                  ))}
-                </FocusableSelect>
-              </label>
+          {mediaType === 'tv' && media && (
+            <div className="tv-pickers">
+              <TVArrowPicker
+                label="Season"
+                value={selectedSeason}
+                canPrev={validSeasons.some((s) => s.season_number < selectedSeason)}
+                canNext={validSeasons.some((s) => s.season_number > selectedSeason)}
+                onPrev={() => setSeason(selectedSeason - 1)}
+                onNext={() => setSeason(selectedSeason + 1)}
+              />
+              <TVArrowPicker
+                label="Episode"
+                value={currentEpisode ? `${selectedEpisode}: ${currentEpisode.name}` : selectedEpisode}
+                canPrev={prevEpNum !== undefined}
+                canNext={nextEpNum !== undefined}
+                onPrev={() => setEpisode(prevEpNum)}
+                onNext={() => setEpisode(nextEpNum)}
+              />
             </div>
-          ) : null}
+          )}
         </section>
+
       </main>
     </FocusContext.Provider>
   )
