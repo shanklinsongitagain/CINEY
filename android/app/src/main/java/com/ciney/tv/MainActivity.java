@@ -148,27 +148,6 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            int keyCode = event.getKeyCode();
-            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-                || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
-                || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-                if (event.getRepeatCount() > 0) {
-                    return true;
-                }
-
-                long now = SystemClock.elapsedRealtime();
-                if (now - lastMediaToggleAtMs < MEDIA_TOGGLE_THROTTLE_MS) {
-                    return true;
-                }
-                lastMediaToggleAtMs = now;
-
-                if (webView != null) {
-                    webView.evaluateJavascript("window.__cineyTogglePlayback && window.__cineyTogglePlayback();", null);
-                }
-                return true;
-            }
-        }
         return super.dispatchKeyEvent(event);
     }
 
