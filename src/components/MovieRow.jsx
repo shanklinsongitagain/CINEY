@@ -29,7 +29,7 @@ function RowCard({ movie, focusKey, prevKey, nextKey }) {
   /* scroll focused card into view — smooth on TV */
   useEffect(() => {
     if (focused && ref.current) {
-      ref.current.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' })
+      ref.current.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
     }
   }, [focused, ref])
 

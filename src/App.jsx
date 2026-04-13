@@ -10,11 +10,8 @@ import Search from './pages/Search'
 import MovieDetails from './pages/MovieDetails'
 import Watch from './pages/Watch'
 import { PlayerProvider, usePlayer } from './context/PlayerContext'
-import { initializeSpatialNavigation } from './lib/spatialNavigation'
 import { getLatestReleaseVersion, isNewerVersion } from './lib/updates'
 import './App.css'
-
-initializeSpatialNavigation()
 
 const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0-local'
 

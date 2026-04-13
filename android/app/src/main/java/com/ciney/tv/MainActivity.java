@@ -41,6 +41,9 @@ public class MainActivity extends BridgeActivity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         settings.setLoadsImagesAutomatically(true);
         settings.setOffscreenPreRaster(true);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setAllowFileAccess(false);
+        settings.setBuiltInZoomControls(false);
 
         webView.addJavascriptInterface(new PlayerBridge(this), "CineyNative");
         webView.setWebChromeClient(new WebChromeClient());
@@ -135,13 +138,25 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) {
+            webView.requestFocus();
+        }
+    }
+
+    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN &&
-            (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-            if (webView != null) {
-                webView.evaluateJavascript("window.__cineyTogglePlayback && window.__cineyTogglePlayback();", null);
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            int keyCode = event.getKeyCode();
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                if (webView != null) {
+                    webView.evaluateJavascript("window.__cineyTogglePlayback && window.__cineyTogglePlayback();", null);
+                }
+                return true;
             }
-            return true;
         }
         return super.dispatchKeyEvent(event);
     }

@@ -1,15 +1,15 @@
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --red:         #e50914;
-  --red-hover:   #f40612;
-  --bg:          #141414;
-  --bg-card:     #1f1f1f;
-  --bg-overlay:  rgba(0,0,0,0.85);
-  --text:        #e5e5e5;
-  --text-dim:    #a3a3a3;
-  --focus-ring:  3px solid #fff;
-  --safe:        5%;
+  --red:         #1ce783;
+  --red-hover:   #1abf72;
+  --bg:          #0b0f14;
+  --bg-card:     #111824;
+  --bg-overlay:  rgba(8,12,18,0.88);
+  --text:        #f1f5f9;
+  --text-dim:    #9aa8bc;
+  --focus-ring:  3px solid #f8fafc;
+  --safe:        4%;
   --sans:        'Lexend', 'Montserrat', system-ui, 'Segoe UI', Roboto, sans-serif;
   --display:     'Poppins', 'Montserrat', system-ui, sans-serif;
 

@@ -13,7 +13,7 @@ function FBtn({ children, onEnterPress, primary = false, autoFocus = false }) {
   return (
     <button
       ref={ref} type="button" tabIndex={0}
-      className={`btn ${primary ? 'btn-primary' : 'btn-secondary'}${focused ? ' spatial-focused' : ''}`}
+      className={`${primary ? 'primary-button' : 'secondary-button'}${focused ? ' spatial-focused' : ''}`}
       onClick={onEnterPress}
     >
       {children}
@@ -58,7 +58,7 @@ function MovieDetails({ mediaType }) {
 
   return (
     <FocusContext.Provider value={focusKey}>
-      <main ref={ref} className="page">
+      <main ref={ref} className="page page--detail">
 
         {/* Backdrop */}
         {media.backdrop_path && (

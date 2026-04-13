@@ -33,7 +33,7 @@ function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
 
   useEffect(() => {
     if (focused && ref.current) {
-      ref.current.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' })
+      ref.current.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
     }
   }, [focused, ref])
 
@@ -55,16 +55,18 @@ function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
           {item.mediaType === 'tv' ? `S${item.season ?? 1} E${item.episode ?? 1} · ` : ''}
           {fmt(item.progress)}
           {' · '}
-          <span
-            style={{ color: '#888', cursor: 'pointer' }}
+          <button
+            type="button"
+            className="continue-remove-inline"
             onClick={(e) => {
               e.stopPropagation()
               removeContinueWatchingItem(item)
               onRemove?.(item.key)
             }}
+            aria-label={`Remove ${item.title} from continue watching`}
           >
             Remove
-          </span>
+          </button>
         </p>
       </div>
     </article>
