@@ -506,6 +506,9 @@ html.is-watch .site-header { display: none; }
 
 .tv-arrow-label { min-width: 140px; text-align: center; font-weight: 600; color: #e5e5e5; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+.watch-player-wrap .player-block { width: 100%; height: 100%; }
+.watch-player-wrap .player-shell { max-height: none; height: 100%; aspect-ratio: unset; }
+
 /* ══════════════════════════════════════════════════════════════
    VIDEO PLAYER
    ══════════════════════════════════════════════════════════════ */

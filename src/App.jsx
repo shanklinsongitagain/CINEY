@@ -125,8 +125,14 @@ function AppInner() {
         event.preventDefault()
         await handleBackAction()
       }
+      // Prevent arrow keys from scrolling the page, but allow them to work
+      // normally inside editable elements so the search input cursor moves.
       if ([37, 38, 39, 40].includes(event.keyCode)) {
-        event.preventDefault()
+        const tag = event.target?.tagName
+        const editable = tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable
+        if (!editable) {
+          event.preventDefault()
+        }
       }
     }
 
