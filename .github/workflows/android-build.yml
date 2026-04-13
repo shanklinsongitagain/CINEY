@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - copilot/fix-build-failures
+  workflow_dispatch:
 
 permissions:
   contents: write
