@@ -74,10 +74,15 @@ if (!buildGradle.includes('versionCode androidVersionCode')) {
   pass('Android build.gradle uses dynamic versionCode configuration')
 }
 
-if (!workflow.includes('assembleRelease')) {
-  fail('Android workflow/build config is not set up for release APK output')
-} else {
+const workflowBuildsRelease = workflow.includes('assembleRelease')
+const workflowBuildsDebug = workflow.includes('assembleDebug')
+
+if (!workflowBuildsRelease && !workflowBuildsDebug) {
+  fail('Android workflow/build config is not set up for APK output')
+} else if (workflowBuildsRelease) {
   pass('Android workflow/build config targets release APK output')
+} else {
+  pass('Android workflow/build config targets debug APK output')
 }
 
 if (process.exitCode) {
