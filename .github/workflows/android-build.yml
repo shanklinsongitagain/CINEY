@@ -31,6 +31,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK components
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager --licenses || true
+
       - name: Restore debug keystore cache
         uses: actions/cache@v4
         with:
@@ -68,7 +73,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew --no-daemon assembleDebug --stacktrace
 
       - name: Delete existing release tag (allow re-publish)
         run: |

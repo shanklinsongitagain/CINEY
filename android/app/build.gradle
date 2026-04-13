@@ -3,7 +3,6 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.ciney.tv"
     compileSdk = rootProject.ext.compileSdkVersion
-    buildToolsVersion = "36.0.0"
     defaultConfig {
         applicationId "com.ciney.tv"
         minSdkVersion rootProject.ext.minSdkVersion
