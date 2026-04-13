@@ -3,12 +3,17 @@ package com.ciney.tv;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -45,18 +50,48 @@ public class MainActivity extends BridgeActivity {
         settings.setLoadsImagesAutomatically(true);
         settings.setOffscreenPreRaster(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setAllowFileAccess(false);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
         settings.setBuiltInZoomControls(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
 
         webView.addJavascriptInterface(new PlayerBridge(this), "CineyNative");
         webView.setWebChromeClient(new WebChromeClient());
+        webView.setBackgroundColor(0xFF000000);
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                view.setBackgroundColor(0xFF000000);
+            }
+
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 injectMessageBridge();
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                if (request != null && request.isForMainFrame()) {
+                    showConnectionFallback(view, "Network error while starting Ciney.");
+                }
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, android.webkit.WebResourceResponse errorResponse) {
+                super.onReceivedHttpError(view, request, errorResponse);
+                if (request != null && request.isForMainFrame() && errorResponse != null && errorResponse.getStatusCode() >= 400) {
+                    showConnectionFallback(view, "Unable to load app content. Retrying may help.");
+                }
+            }
+
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                handler.cancel();
+                showConnectionFallback(view, "SSL error while loading startup content.");
             }
         });
     }
@@ -136,6 +171,12 @@ public class MainActivity extends BridgeActivity {
             "})();";
 
         webView.evaluateJavascript(script, null);
+    }
+
+    private void showConnectionFallback(WebView view, String message) {
+        String safeMessage = message == null ? "Connection Error" : message.replace("'", "&#39;");
+        String html = "<html><body style='margin:0;background:#000;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;'><div style='text-align:center;padding:24px;'><h2 style='margin:0 0 12px;'>Ciney Startup Error</h2><p style='opacity:.85;margin:0 0 16px;'>" + safeMessage + "</p><button onclick='location.reload()' style='background:#1ce783;border:0;border-radius:999px;padding:10px 16px;font-weight:700;'>Retry</button></div></body></html>";
+        view.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
     }
 
     @Override
