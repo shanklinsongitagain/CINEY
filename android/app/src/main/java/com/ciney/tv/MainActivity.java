@@ -18,9 +18,11 @@ import org.json.JSONObject;
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_NAME = "ciney_player_progress";
     private static final long SAVE_THROTTLE_MS = 7000L;
+    private static final long MEDIA_TOGGLE_THROTTLE_MS = 800L;
 
     private WebView webView;
     private long lastSavedAtMs = 0L;
+    private long lastMediaToggleAtMs = 0L;
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
@@ -114,14 +116,10 @@ public class MainActivity extends BridgeActivity {
             "  try{" +
             "    var iframe = document.querySelector('iframe.player-frame, iframe.pv-frame, iframe');" +
             "    if(iframe){iframe.focus();}" +
-            "    var keyEvent = new KeyboardEvent('keydown',{key:'Enter',code:'Enter',keyCode:13,which:13,bubbles:true});" +
-            "    document.dispatchEvent(keyEvent);" +
             "    if(iframe && iframe.contentWindow){" +
             "      iframe.contentWindow.postMessage(JSON.stringify({type:'CINEY_TOGGLE_PLAYBACK'}), '*');" +
             "      iframe.contentWindow.postMessage(JSON.stringify({type:'CINEY_KEY_EVENT', key:'Enter'}), '*');" +
             "    }" +
-            "    var video = document.querySelector('video');" +
-            "    if(video){if(video.paused){video.play();}else{video.pause();}}" +
             "    return true;" +
             "  }catch(_){return false;}" +
             "};" +
@@ -155,6 +153,16 @@ public class MainActivity extends BridgeActivity {
             if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
                 || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
                 || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                if (event.getRepeatCount() > 0) {
+                    return true;
+                }
+
+                long now = SystemClock.elapsedRealtime();
+                if (now - lastMediaToggleAtMs < MEDIA_TOGGLE_THROTTLE_MS) {
+                    return true;
+                }
+                lastMediaToggleAtMs = now;
+
                 if (webView != null) {
                     webView.evaluateJavascript("window.__cineyTogglePlayback && window.__cineyTogglePlayback();", null);
                 }
