@@ -4,6 +4,10 @@ import plugin from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [plugin()],
+    build: {
+        target: ['chrome74', 'es2019'],
+        cssTarget: 'chrome74',
+    },
     server: {
         port: 50525,
     }
