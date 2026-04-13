@@ -165,7 +165,7 @@
 
 /* ── Shared button base ─────────────────────────────────────── */
 .primary-button, .secondary-button, .watch-link, .details-link,
-.tv-btn, .continue-action-button, .continue-remove-button, .search-form button {
+.tv-btn, .continue-action-button, .continue-remove-button, .nav-utility-button, .search-page-btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 0.5rem; border: 2px solid transparent; border-radius: 4px;
   padding: 0.7rem 1.6rem; font-weight: 700; font-size: 1rem;
@@ -224,13 +224,24 @@
 .nav-link-pill.active, .nav-link-pill[data-active="true"] { color: #fff; font-weight: 700; background: rgba(28,231,131,0.14); }
 .nav-link-pill.spatial-focused { color: #fff; border-color: rgba(241,245,249,0.9); background: rgba(148,163,184,0.18); outline: none !important; }
 
-.search-form { display: flex; align-items: center; gap: 0.5rem; width: min(100%, 300px); }
-.search-form input {
-  flex: 1; min-width: 0; border: 1px solid rgba(148,163,184,0.3);
-  background: rgba(14,23,36,0.9); color: #f8fafc; border-radius: 999px; padding: 0.5rem 0.9rem;
+.nav-utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-left: auto;
 }
-.search-form input.spatial-focused { border-color: rgba(241,245,249,0.95); }
-.search-form button { padding: 0.5rem 1rem; background: var(--red); color: #062213; border-radius: 999px; }
+
+.nav-utility-button {
+  padding: 0.55rem 1rem;
+  background: var(--red);
+  color: #062213;
+  border-radius: 999px;
+}
+
+.nav-utility-copy {
+  color: #b9c6d8;
+  font-size: 0.78rem;
+}
 
 /* ══════════════════════════════════════════════════════════════
    HERO BILLBOARD
@@ -495,6 +506,9 @@ html.is-watch .site-header { display: none; }
 
 .tv-arrow-label { min-width: 140px; text-align: center; font-weight: 600; color: #e5e5e5; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+.watch-player-wrap .player-block { width: 100%; height: 100%; }
+.watch-player-wrap .player-shell { max-height: none; height: 100%; aspect-ratio: unset; }
+
 /* ══════════════════════════════════════════════════════════════
    VIDEO PLAYER
    ══════════════════════════════════════════════════════════════ */
@@ -682,7 +696,12 @@ html.is-watch .site-header { display: none; }
 @media (max-width: 900px) {
   .nav-content { flex-wrap: wrap; padding: 0.75rem var(--safe); min-height: unset; }
   .nav-links { order: 3; flex-wrap: wrap; }
-  .search-form { width: 100%; order: 2; }
+  .nav-utility {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
   .detail-grid { grid-template-columns: 1fr; }
   .detail-info { grid-template-columns: 1fr; }
   .detail-backdrop-wrap { height: clamp(200px, 40vw, 360px); }
@@ -707,6 +726,10 @@ html.is-watch .site-header { display: none; }
   .hero-banner { min-height: min(66vh, 860px); max-height: 85vh; }
   .hero-copy { max-width: min(600px, 45%); }
   .nav-content { min-height: 74px; }
+  .nav-link-pill,
+  .nav-utility-button { font-size: 1rem; }
+  .nav-utility-copy,
+  .status-message { font-size: 0.95rem; }
   .row-track { gap: 0.8rem; }
   .detail-info { grid-template-columns: 220px 1fr; gap: 2.5rem; }
   .detail-backdrop-wrap { height: clamp(320px, 40vw, 580px); }
@@ -714,6 +737,8 @@ html.is-watch .site-header { display: none; }
   .watch-topbar { min-height: 64px; padding: 1rem var(--safe); }
   .watch-controls { padding: 1rem var(--safe) 1.5rem; }
   .watch-meta { font-size: 0.95rem; -webkit-line-clamp: 3; }
+  .search-page-input,
+  .search-page-btn { font-size: 1.05rem; min-height: 3.2rem; }
 }
 
 @media screen and (min-width: 1920px) {

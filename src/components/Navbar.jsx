@@ -1,5 +1,4 @@
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 export const NAVBAR_FOCUS_KEY = 'CINEY_NAVBAR'
@@ -34,24 +33,15 @@ function NavItem({ children, to, onEnterPress }) {
 }
 
 function Navbar({ solid = false }) {
-  const [query, setQuery] = useState('')
   const navigate = useNavigate()
   const { ref, focusKey } = useFocusable({ trackChildren: true, focusKey: NAVBAR_FOCUS_KEY })
-
-  const handleSearch = () => {
-    const q = query.trim()
-    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search')
-  }
-
-  const { ref: inputRef, focused: inputFocused } = useFocusable({
+  const { ref: searchCtaRef, focused: searchCtaFocused } = useFocusable({
+    onEnterPress: () => navigate('/search'),
     onArrowPress: (dir) => {
-      if (dir === 'down') { setFocus(CONTENT_FOCUS_KEY); return false }
-    },
-  })
-  const { ref: searchBtnRef, focused: searchBtnFocused } = useFocusable({
-    onEnterPress: handleSearch,
-    onArrowPress: (dir) => {
-      if (dir === 'down') { setFocus(CONTENT_FOCUS_KEY); return false }
+      if (dir === 'down') {
+        setFocus(CONTENT_FOCUS_KEY)
+        return false
+      }
     },
   })
 
@@ -70,27 +60,17 @@ function Navbar({ solid = false }) {
           </nav>
         </FocusContext.Provider>
 
-        <form
-          className="search-form"
-          onSubmit={(e) => { e.preventDefault(); handleSearch() }}
-        >
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search…"
-            aria-label="Search"
-            className={inputFocused ? 'spatial-focused' : ''}
-          />
+        <div className="nav-utility tv-safe-zone">
           <button
-            ref={searchBtnRef}
-            type="submit"
-            className={searchBtnFocused ? 'spatial-focused' : ''}
+            ref={searchCtaRef}
+            type="button"
+            className={`nav-utility-button${searchCtaFocused ? ' spatial-focused' : ''}`}
+            onClick={() => navigate('/search')}
           >
-            Go
+            Open Search
           </button>
-        </form>
+          <span className="nav-utility-copy">Press Select to open the Fire TV keyboard</span>
+        </div>
       </div>
     </header>
   )

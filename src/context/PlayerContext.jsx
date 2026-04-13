@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useState } from 'react'
-
-const Ctx = createContext(null)
+import { useCallback, useState } from 'react'
+import { PlayerContext } from './playerContext'
 
 /**
  * player shape:
@@ -24,12 +23,8 @@ export function PlayerProvider({ children }) {
   }, [])
 
   return (
-    <Ctx.Provider value={{ player, openPlayer, closePlayer, updateEpisode }}>
+    <PlayerContext.Provider value={{ player, openPlayer, closePlayer, updateEpisode }}>
       {children}
-    </Ctx.Provider>
+    </PlayerContext.Provider>
   )
-}
-
-export function usePlayer() {
-  return useContext(Ctx)
 }

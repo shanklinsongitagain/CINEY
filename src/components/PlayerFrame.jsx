@@ -1,3 +1,4 @@
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { buildPlayerUrl } from '../lib/player'
 import { parsePlayerMessage, shouldPersistProgress } from '../lib/playerEvents'
@@ -8,6 +9,20 @@ import { getMediaTitle } from '../lib/tmdb'
 
 const defaultAllowedOrigin = 'https://www.vidking.net'
 const allowedOrigin = import.meta.env.VITE_PLAYER_ALLOWED_ORIGIN || defaultAllowedOrigin
+
+function FallbackBtn({ children, onClick }) {
+  const { ref, focused } = useFocusable({ onEnterPress: onClick })
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={`player-link-button${focused ? ' spatial-focused' : ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
 
 function PlayerEmbedSession({ sourceUrl, mediaType, id, sourceIndex, onRetry, onSwitchSource }) {
   const [frameLoaded, setFrameLoaded] = useState(false)
@@ -43,8 +58,8 @@ function PlayerEmbedSession({ sourceUrl, mediaType, id, sourceIndex, onRetry, on
       {showFallback && (
         <div className="player-fallback-bar">
           <span className="player-fallback-label">Playback stalled</span>
-          <button type="button" className="player-link-button" onClick={() => { setShowFallback(false); onRetry() }}>Retry</button>
-          <button type="button" className="player-link-button" onClick={() => { setShowFallback(false); onSwitchSource() }}>Source 2</button>
+          <FallbackBtn onClick={() => { setShowFallback(false); onRetry() }}>Retry</FallbackBtn>
+          <FallbackBtn onClick={() => { setShowFallback(false); onSwitchSource() }}>Source 2</FallbackBtn>
         </div>
       )}
     </>

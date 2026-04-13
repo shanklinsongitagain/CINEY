@@ -5,7 +5,7 @@ import { parsePlayerMessage, shouldPersistProgress } from '../lib/playerEvents'
 import { getPlayerSourceBase, getPlayerSourceCount } from '../lib/playerSources'
 import { logPlayerTelemetry } from '../lib/playerTelemetry'
 import { readSavedProgress, saveProgress } from '../lib/progress'
-import { usePlayer } from '../context/PlayerContext'
+import { usePlayer } from '../context/usePlayer'
 
 const ALLOWED_ORIGIN = import.meta.env.VITE_PLAYER_ALLOWED_ORIGIN || 'https://www.vidking.net'
 const CONTROLS_TIMEOUT_MS = 5000
@@ -71,6 +71,8 @@ export default function PlayerView() {
 
   const sourceCount = getPlayerSourceCount()
   const activeBaseUrl = getPlayerSourceBase(sourceIndex)
+  const playerId = player?.id ?? null
+  const playerMediaType = player?.mediaType ?? null
 
   /* ── Sync local state when player opens ─────────────── */
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function PlayerView() {
       setEpisodeMotion(false)
       lastSavedAtRef.current = 0
     }
-  }, [player?.id, player?.mediaType])
+  }, [player, playerId, playerMediaType])
 
   /* ── Build iframe URL ────────────────────────────────── */
   const startTime = useMemo(

@@ -1,6 +1,6 @@
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { memo, useCallback, useEffect, useRef } from 'react'
-import { usePlayer } from '../context/PlayerContext'
+import { memo, useCallback, useEffect, useId } from 'react'
+import { usePlayer } from '../context/usePlayer'
 import { NAVBAR_FOCUS_KEY } from './Navbar'
 import { removeContinueWatchingItem } from '../lib/progress'
 import { getImageUrl } from '../lib/tmdb'
@@ -74,8 +74,8 @@ function CWCard({ item, onRemove, focusKey, prevKey, nextKey }) {
 }
 
 function ContinueWatching({ items, onRemove }) {
-  const rowId = useRef('cw-')
-  const cardKey = useCallback((item) => `${rowId.current}${item.key}`, [])
+  const rowId = useId()
+  const cardKey = useCallback((item) => `cw-${rowId}-${item.key}`, [rowId])
   const { ref, focusKey } = useFocusable({ trackChildren: true, focusable: false })
 
   if (!items.length) return null

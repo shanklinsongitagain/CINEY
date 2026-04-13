@@ -9,7 +9,8 @@ import Home from './pages/Home'
 import Search from './pages/Search'
 import MovieDetails from './pages/MovieDetails'
 import Watch from './pages/Watch'
-import { PlayerProvider, usePlayer } from './context/PlayerContext'
+import { PlayerProvider } from './context/PlayerContext'
+import { usePlayer } from './context/usePlayer'
 import { getLatestReleaseVersion, isNewerVersion } from './lib/updates'
 import './App.css'
 
@@ -124,8 +125,14 @@ function AppInner() {
         event.preventDefault()
         await handleBackAction()
       }
+      // Prevent arrow keys from scrolling the page, but allow them to work
+      // normally inside editable elements so the search input cursor moves.
       if ([37, 38, 39, 40].includes(event.keyCode)) {
-        event.preventDefault()
+        const tag = event.target?.tagName
+        const editable = tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable
+        if (!editable) {
+          event.preventDefault()
+        }
       }
     }
 

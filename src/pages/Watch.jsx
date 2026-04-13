@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import PlayerFrame from '../components/PlayerFrame'
 import { NAVBAR_FOCUS_KEY } from '../components/Navbar'
-import { getBackdropUrl, getMediaTitle, getMovieDetails, getTvDetails, getTvSeasonDetails } from '../lib/tmdb'
+import { getMediaTitle, getMovieDetails, getTvDetails, getTvSeasonDetails } from '../lib/tmdb'
 
 function TVBtn({ children, onEnterPress, disabled = false, autoFocus = false, className = '' }) {
   const { ref, focused, focusSelf } = useFocusable({ onEnterPress: disabled ? undefined : onEnterPress })

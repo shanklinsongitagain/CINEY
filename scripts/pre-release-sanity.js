@@ -12,6 +12,7 @@ function pass(message) {
 const requiredFiles = [
   '.github/workflows/android-build.yml',
   'android/app/src/main/AndroidManifest.xml',
+  'android/app/build.gradle',
   'src/lib/player.js',
 ]
 
@@ -46,6 +47,37 @@ if (!manifest.includes('android:hardwareAccelerated="true"')) {
   fail('AndroidManifest missing hardware acceleration')
 } else {
   pass('AndroidManifest hardware acceleration enabled')
+}
+
+if (!manifest.includes('android.intent.category.LEANBACK_LAUNCHER')) {
+  fail('AndroidManifest missing LEANBACK launcher category')
+} else {
+  pass('AndroidManifest Leanback launcher category present')
+}
+
+if (!manifest.includes('android:screenOrientation="landscape"')) {
+  fail('AndroidManifest missing landscape orientation lock')
+} else {
+  pass('AndroidManifest landscape orientation enabled')
+}
+
+const buildGradle = fs.existsSync('android/app/build.gradle')
+  ? fs.readFileSync('android/app/build.gradle', 'utf8')
+  : ''
+const workflow = fs.existsSync('.github/workflows/android-build.yml')
+  ? fs.readFileSync('.github/workflows/android-build.yml', 'utf8')
+  : ''
+
+if (!buildGradle.includes('versionCode androidVersionCode')) {
+  fail('Android build.gradle missing dynamic versionCode configuration')
+} else {
+  pass('Android build.gradle uses dynamic versionCode configuration')
+}
+
+if (!workflow.includes('assembleRelease')) {
+  fail('Android workflow/build config is not set up for release APK output')
+} else {
+  pass('Android workflow/build config targets release APK output')
 }
 
 if (process.exitCode) {

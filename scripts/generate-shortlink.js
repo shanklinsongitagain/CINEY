@@ -59,10 +59,10 @@ async function getLatestApkUrl() {
   }
 
   const release = await response.json()
-  const apkAsset = (release.assets ?? []).find((asset) => asset.name === 'app-debug.apk')
+  const apkAsset = (release.assets ?? []).find((asset) => asset.name === 'app-release.apk')
 
   if (!apkAsset?.browser_download_url) {
-    throw new Error('Could not find app-debug.apk in the latest release assets. The GitHub Actions build may still be running.')
+    throw new Error('Could not find app-release.apk in the latest release assets. The GitHub Actions build may still be running.')
   }
 
   return apkAsset.browser_download_url

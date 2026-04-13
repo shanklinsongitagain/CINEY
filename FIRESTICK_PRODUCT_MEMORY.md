@@ -51,7 +51,7 @@ Build Ciney as a stable, TV-first, Netflix-like Firestick streaming app with smo
 
 ## Release Verification Checklist
 - Android workflow run is green on latest `main` commit.
-- Released asset includes `app-debug.apk`.
+- Released asset includes `app-release.apk`.
 - TinyURL resolves to that exact APK asset.
 - Clean install works on Firestick.
 - In-app watch flow starts playback and receives progress events.

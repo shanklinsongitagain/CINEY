@@ -8,8 +8,8 @@ function Search() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [inputValue, setInputValue] = useState(searchParams.get('q') ?? '')
   const [movies, setMovies] = useState([])
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resolvedQuery, setResolvedQuery] = useState('')
 
   const query = searchParams.get('q') ?? ''
 
@@ -28,14 +28,29 @@ function Search() {
 
   useEffect(() => {
     let active = true
-    if (!query.trim()) { setMovies([]); setError(''); setLoading(false); return }
-    setLoading(true)
+    if (!query.trim()) {
+      return () => { active = false }
+    }
     searchTitles(query)
-      .then((r) => { if (active) { setMovies(r); setError('') } })
-      .catch((e) => { if (active) setError(e.message) })
-      .finally(() => { if (active) setLoading(false) })
+      .then((r) => {
+        if (active) {
+          setMovies(r)
+          setError('')
+          setResolvedQuery(query)
+        }
+      })
+      .catch((e) => {
+        if (active) {
+          setError(e.message)
+          setResolvedQuery(query)
+        }
+      })
     return () => { active = false }
   }, [query])
+
+  const loading = Boolean(query.trim()) && resolvedQuery !== query
+  const visibleMovies = resolvedQuery === query ? movies : []
+  const visibleError = resolvedQuery === query ? error : ''
 
   return (
     <main className="page container">
@@ -67,10 +82,10 @@ function Search() {
         </form>
 
         {loading && <p className="status-message">Searching…</p>}
-        {error && <p className="status-message status-message--error">{error}</p>}
-        {!loading && !error && query && (
+        {visibleError && <p className="status-message status-message--error">{visibleError}</p>}
+        {!loading && !visibleError && query && (
           <MovieGrid
-            movies={movies}
+            movies={visibleMovies}
             emptyMessage={`No results for "${query}".`}
             autoFocus
           />
