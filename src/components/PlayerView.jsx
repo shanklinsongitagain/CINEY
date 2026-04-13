@@ -268,8 +268,6 @@ export default function PlayerView() {
         src={src}
         className="pv-frame"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-        referrerPolicy="no-referrer"
         allowFullScreen
         onLoad={() => {
           setLoading(false)
