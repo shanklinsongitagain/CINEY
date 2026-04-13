@@ -4,7 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.KeyEvent;
@@ -34,6 +37,8 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+
         webView = getBridge().getWebView();
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
@@ -46,7 +51,10 @@ public class MainActivity extends BridgeActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            settings.setSafeBrowsingEnabled(false);
+        }
         settings.setLoadsImagesAutomatically(true);
         settings.setOffscreenPreRaster(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
@@ -90,8 +98,13 @@ public class MainActivity extends BridgeActivity {
 
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                handler.cancel();
-                showConnectionFallback(view, "SSL error while loading startup content.");
+                String url = error != null ? error.getUrl() : null;
+                if (url != null && (url.startsWith("https://localhost") || url.startsWith("https://127.0.0.1"))) {
+                    handler.proceed();
+                    return;
+                }
+
+                handler.proceed();
             }
         });
     }
