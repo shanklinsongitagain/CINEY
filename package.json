@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "get-link": "node scripts/generate-shortlink.js",
+    "sanity:release": "node scripts/pre-release-sanity.js",
     "android:sync": "npx cap sync android",
     "android:open": "npx cap open android",
     "android:build:debug": "powershell -ExecutionPolicy Bypass -File .\\scripts\\build-android-debug.ps1"

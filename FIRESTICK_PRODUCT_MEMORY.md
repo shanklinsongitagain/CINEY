@@ -31,22 +31,22 @@ Build Ciney as a stable, TV-first, Netflix-like Firestick streaming app with smo
 - [x] Remove fragile forced player query defaults that can cause unavailable pages.
 - [x] Keep native bridge and fullscreen/back handling stable.
 - [x] Add in-app Retry/Source 2 recovery actions (no external player link dependency).
-- [ ] Add simple in-app telemetry event logging for playback failures (non-PII).
+- [x] Add simple in-app telemetry event logging for playback failures (non-PII).
 
 ### Phase 2 — Netflix-like UI hardening
 - [x] Overscan-safe control overlays (5% safe-zone behavior).
 - [x] Strong high-contrast focus states for TV controls.
 - [x] Smart buffering overlay + control auto-hide behavior.
-- [ ] Improve episode rail focus choreography and animation timing.
+- [x] Improve episode rail focus choreography and animation timing.
 
 ### Phase 3 — Release confidence
 - [x] Keep CI-generated APK updates installable by stabilizing debug keystore usage.
-- [ ] Add smoke verification checklist to release body.
-- [ ] Add pre-release sanity script (env + asset checks).
+- [x] Add smoke verification checklist to release body.
+- [x] Add pre-release sanity script (env + asset checks).
 
 ### Phase 4 — Native player migration
-- [ ] Design bridge-to-native ExoPlayer migration path.
-- [ ] Introduce API-managed playback sources.
+- [x] Design bridge-to-native ExoPlayer migration path (`docs/EXOPLAYER_MIGRATION_PLAN.md`).
+- [x] Introduce API-managed playback sources (source base list abstraction in frontend).
 - [ ] Move from iframe-first to native playback-first architecture.
 
 ## Release Verification Checklist

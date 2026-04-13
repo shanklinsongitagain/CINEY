@@ -2,6 +2,8 @@ import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spat
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { buildPlayerUrl } from '../lib/player'
 import { parsePlayerMessage, shouldPersistProgress } from '../lib/playerEvents'
+import { getPlayerSourceBase, getPlayerSourceCount } from '../lib/playerSources'
+import { logPlayerTelemetry } from '../lib/playerTelemetry'
 import { readSavedProgress, saveProgress } from '../lib/progress'
 import { usePlayer } from '../context/PlayerContext'
 
@@ -9,6 +11,7 @@ const ALLOWED_ORIGIN = import.meta.env.VITE_PLAYER_ALLOWED_ORIGIN || 'https://ww
 const CONTROLS_TIMEOUT_MS = 5000
 const SMART_BUFFER_DELAY_MS = 3000
 const RECOVERY_TIMEOUT_MS = 15000
+const EPISODE_ANIM_MS = 220
 const BACK_KEY = 'PV_BACK'
 
 /* ── Small control button ─────────────────────────────── */
@@ -49,13 +52,15 @@ export default function PlayerView() {
   const [hasPlayEvent, setHasPlayEvent] = useState(false)
   const [showSmartBuffer, setShowSmartBuffer] = useState(false)
   const [showRecovery, setShowRecovery] = useState(false)
-  const [sourceIndex, setSourceIndex] = useState(null)
+  const [sourceIndex, setSourceIndex] = useState(0)
   const [retryTick, setRetryTick] = useState(0)
+  const [episodeMotion, setEpisodeMotion] = useState(false)
 
   const iframeRef = useRef(null)
   const hideTimerRef = useRef(null)
   const smartBufferTimerRef = useRef(null)
   const recoveryTimerRef = useRef(null)
+  const episodeMotionRef = useRef(null)
   const lastSavedAtRef = useRef(0)
 
   const { ref: ctrlRef, focusKey: ctrlKey } = useFocusable({
@@ -63,6 +68,9 @@ export default function PlayerView() {
     isFocusBoundary: true,
     focusable: false,
   })
+
+  const sourceCount = getPlayerSourceCount()
+  const activeBaseUrl = getPlayerSourceBase(sourceIndex)
 
   /* ── Sync local state when player opens ─────────────── */
   useEffect(() => {
@@ -74,8 +82,9 @@ export default function PlayerView() {
       setHasPlayEvent(false)
       setShowSmartBuffer(false)
       setShowRecovery(false)
-      setSourceIndex(null)
+      setSourceIndex(0)
       setRetryTick(0)
+      setEpisodeMotion(false)
       lastSavedAtRef.current = 0
     }
   }, [player?.id, player?.mediaType])
@@ -89,15 +98,12 @@ export default function PlayerView() {
 
   const src = useMemo(() => {
     if (!player) return null
-    const url = new URL(buildPlayerUrl(player.mediaType, player.id, season, episode, startTime))
-    if (sourceIndex !== null) {
-      url.searchParams.set('source', String(sourceIndex))
-    }
+    const url = new URL(buildPlayerUrl(player.mediaType, player.id, season, episode, startTime, activeBaseUrl))
     if (retryTick > 0) {
       url.searchParams.set('retry', String(retryTick))
     }
     return url.toString()
-  }, [player, season, episode, startTime, sourceIndex, retryTick])
+  }, [player, season, episode, startTime, activeBaseUrl, retryTick])
 
   /* ── Inactivity timer ────────────────────────────────── */
   const clearInactivityTimer = useCallback(() => {
@@ -130,13 +136,35 @@ export default function PlayerView() {
   const startSmartTimers = useCallback(() => {
     clearSmartTimers()
     smartBufferTimerRef.current = setTimeout(() => {
-      if (!hasPlayEvent) setShowSmartBuffer(true)
+      if (!hasPlayEvent) {
+        setShowSmartBuffer(true)
+        logPlayerTelemetry('smart_buffer_waiting', {
+          mediaType: player?.mediaType,
+          id: player?.id,
+          sourceIndex,
+        })
+      }
     }, SMART_BUFFER_DELAY_MS)
 
     recoveryTimerRef.current = setTimeout(() => {
-      if (!hasPlayEvent) setShowRecovery(true)
+      if (!hasPlayEvent) {
+        setShowRecovery(true)
+        logPlayerTelemetry('recovery_shown', {
+          mediaType: player?.mediaType,
+          id: player?.id,
+          sourceIndex,
+        })
+      }
     }, RECOVERY_TIMEOUT_MS)
-  }, [clearSmartTimers, hasPlayEvent])
+  }, [clearSmartTimers, hasPlayEvent, player?.id, player?.mediaType, sourceIndex])
+
+  function triggerEpisodeMotion() {
+    setEpisodeMotion(true)
+    if (episodeMotionRef.current) {
+      clearTimeout(episodeMotionRef.current)
+    }
+    episodeMotionRef.current = setTimeout(() => setEpisodeMotion(false), EPISODE_ANIM_MS)
+  }
 
   /* ── Key handlers + side effects ─────────────────────── */
   useEffect(() => {
@@ -157,6 +185,7 @@ export default function PlayerView() {
     return () => {
       clearInactivityTimer()
       clearSmartTimers()
+      if (episodeMotionRef.current) clearTimeout(episodeMotionRef.current)
     }
   }, [player, scheduleHide, clearInactivityTimer, clearSmartTimers])
 
@@ -185,6 +214,7 @@ export default function PlayerView() {
       if (s !== season || ep !== episode) {
         setSeason(s)
         setEpisode(ep)
+        triggerEpisodeMotion()
         updateEpisode(s, ep)
       }
 
@@ -218,15 +248,31 @@ export default function PlayerView() {
     setShowSmartBuffer(false)
     setShowRecovery(false)
     setRetryTick((v) => v + 1)
-  }, [])
+    logPlayerTelemetry('manual_retry', {
+      mediaType: player?.mediaType,
+      id: player?.id,
+      sourceIndex,
+    })
+  }, [player?.id, player?.mediaType, sourceIndex])
 
   const handleSource2 = useCallback(() => {
+    if (sourceCount < 2) {
+      handleRetry()
+      return
+    }
+
     setLoading(true)
     setHasPlayEvent(false)
     setShowSmartBuffer(false)
     setShowRecovery(false)
-    setSourceIndex(2)
-  }, [])
+    setSourceIndex(1)
+    setRetryTick((v) => v + 1)
+    logPlayerTelemetry('source_switch', {
+      mediaType: player?.mediaType,
+      id: player?.id,
+      sourceIndex: 1,
+    })
+  }, [handleRetry, player?.id, player?.mediaType, sourceCount])
 
   if (!player) return null
 
@@ -265,6 +311,11 @@ export default function PlayerView() {
           setShowSmartBuffer(false)
           setShowRecovery(true)
           clearSmartTimers()
+          logPlayerTelemetry('iframe_error', {
+            mediaType: player?.mediaType,
+            id: player?.id,
+            sourceIndex,
+          })
         }}
         title="Ciney player"
       />
@@ -284,7 +335,7 @@ export default function PlayerView() {
           </div>
 
           {isTV && (
-            <div className="pv-bar pv-bar--bottom">
+            <div className={`pv-bar pv-bar--bottom${episodeMotion ? ' pv-bar--motion' : ''}`}>
               <PVPicker
                 label="Season"
                 value={season}
@@ -294,16 +345,16 @@ export default function PlayerView() {
                 canNext={hasSeasonData
                   ? validSeasons.some((s) => s.season_number > season)
                   : true}
-                onPrev={() => { setSeason((s) => s - 1); setEpisode(1); setSourceIndex(null) }}
-                onNext={() => { setSeason((s) => s + 1); setEpisode(1); setSourceIndex(null) }}
+                onPrev={() => { setSeason((s) => s - 1); setEpisode(1); setSourceIndex(0); triggerEpisodeMotion() }}
+                onNext={() => { setSeason((s) => s + 1); setEpisode(1); setSourceIndex(0); triggerEpisodeMotion() }}
               />
               <PVPicker
                 label="Episode"
                 value={episode}
                 canPrev={episode > 1}
                 canNext
-                onPrev={() => { setEpisode((e) => e - 1); setSourceIndex(null) }}
-                onNext={() => { setEpisode((e) => e + 1); setSourceIndex(null) }}
+                onPrev={() => { setEpisode((e) => e - 1); setSourceIndex(0); triggerEpisodeMotion() }}
+                onNext={() => { setEpisode((e) => e + 1); setSourceIndex(0); triggerEpisodeMotion() }}
               />
             </div>
           )}

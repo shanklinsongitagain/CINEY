@@ -2,8 +2,9 @@ const defaultPlayerBaseUrl = 'https://www.vidking.net/embed'
 
 const playerBaseUrl = import.meta.env.VITE_PLAYER_BASE_URL || defaultPlayerBaseUrl
 
-export function buildPlayerUrl(mediaType, id, season = 1, episode = 1, progress = 0) {
-  const trimmedBaseUrl = playerBaseUrl.replace(/\/$/, '')
+export function buildPlayerUrl(mediaType, id, season = 1, episode = 1, progress = 0, baseUrlOverride = null) {
+  const selectedBaseUrl = baseUrlOverride || playerBaseUrl
+  const trimmedBaseUrl = selectedBaseUrl.replace(/\/$/, '')
   const safeSeason = Number.isFinite(Number(season)) ? Number(season) : 1
   const safeEpisode = Number.isFinite(Number(episode)) ? Number(episode) : 1
   const safeProgress = Number.isFinite(Number(progress)) ? Math.max(0, Math.floor(Number(progress))) : 0
@@ -22,8 +23,9 @@ export function buildPlayerUrl(mediaType, id, season = 1, episode = 1, progress 
   return url.toString()
 }
 
-export function getVideoStreamUrl(mediaType, id, season = 1, episode = 1) {
-  const baseUrl = playerBaseUrl.replace(/\/embed\/?$/, '')
+export function getVideoStreamUrl(mediaType, id, season = 1, episode = 1, baseUrlOverride = null) {
+  const selectedBaseUrl = baseUrlOverride || playerBaseUrl
+  const baseUrl = selectedBaseUrl.replace(/\/embed\/?$/, '')
   const safeSeason = Number.isFinite(Number(season)) ? Number(season) : 1
   const safeEpisode = Number.isFinite(Number(episode)) ? Number(episode) : 1
 

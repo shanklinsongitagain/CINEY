@@ -2,6 +2,12 @@
 
 Ciney is a React + Vite front end for browsing TMDB movies and TV shows and launching the configured player.
 
+## Product memory
+
+Persistent Firestick product goals and roadmap are tracked in:
+
+- `FIRESTICK_PRODUCT_MEMORY.md`
+
 ## Setup
 
 1. Install dependencies:
@@ -25,8 +31,15 @@ Create a local `.env` file with:
 - `VITE_TMDB_API_KEY`
 - `VITE_PLAYER_BASE_URL`
 - `VITE_PLAYER_ALLOWED_ORIGIN`
+- `VITE_PLAYER_SOURCE_BASES` (optional, comma-separated fallback base URLs)
 - `VITE_GITHUB_REPO` (optional, for update checks and release helper)
 - `VITE_APP_VERSION` (optional, for update checks)
+
+## Release sanity check
+
+Run this before shipping:
+
+- `npm run sanity:release`
 
 ## Playback note for Visual Studio
 
@@ -52,10 +65,11 @@ On every push to `main`, it:
 1. installs Node and Java 21
 2. sets up the Android SDK
 3. runs `npm install`
-4. runs `npm run build`
-5. runs `npm run android:sync`
-6. runs `./gradlew assembleDebug`
-7. publishes `app-debug.apk` to a GitHub Release named **Latest Firestick Build**
+4. runs `npm run sanity:release`
+5. runs `npm run build`
+6. runs `npm run android:sync`
+7. runs `./gradlew assembleDebug`
+8. publishes `app-debug.apk` to a GitHub Release named **Latest Firestick Build**
 
 ### Required GitHub secrets
 
