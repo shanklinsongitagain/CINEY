@@ -31,6 +31,7 @@ public class MainActivity extends BridgeActivity {
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
         webView.requestFocus();
+        webView.setKeepScreenOn(true);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
@@ -44,6 +45,8 @@ public class MainActivity extends BridgeActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setAllowFileAccess(false);
         settings.setBuiltInZoomControls(false);
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
 
         webView.addJavascriptInterface(new PlayerBridge(this), "CineyNative");
         webView.setWebChromeClient(new WebChromeClient());

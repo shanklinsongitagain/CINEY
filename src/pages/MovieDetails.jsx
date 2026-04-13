@@ -1,7 +1,7 @@
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { usePlayer } from '../context/PlayerContext'
+import { usePlayer } from '../context/usePlayer'
 import {
   getBackdropUrl, getImageUrl, getMediaReleaseDate,
   getMediaTitle, getMovieDetails, getTvDetails,

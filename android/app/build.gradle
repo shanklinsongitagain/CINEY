@@ -1,14 +1,45 @@
 apply plugin: 'com.android.application'
 
+def readStringConfig = { String envName, String propertyName, String fallback = null ->
+    return System.getenv(envName) ?: (project.hasProperty(propertyName) ? project.property(propertyName) : fallback)
+}
+
+def readIntConfig = { String envName, String propertyName, int fallback ->
+    def rawValue = readStringConfig(envName, propertyName, String.valueOf(fallback))
+    try {
+        return Integer.parseInt(rawValue)
+    } catch (Exception ignored) {
+        return fallback
+    }
+}
+
+def releaseStoreFile = readStringConfig('CINEY_RELEASE_STORE_FILE', 'cineyReleaseStoreFile')
+def releaseStorePassword = readStringConfig('CINEY_RELEASE_STORE_PASSWORD', 'cineyReleaseStorePassword')
+def releaseKeyAlias = readStringConfig('CINEY_RELEASE_KEY_ALIAS', 'cineyReleaseKeyAlias')
+def releaseKeyPassword = readStringConfig('CINEY_RELEASE_KEY_PASSWORD', 'cineyReleaseKeyPassword')
+def hasReleaseSigning = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
+def androidVersionCode = readIntConfig('CINEY_VERSION_CODE', 'cineyVersionCode', 1)
+def androidVersionName = readStringConfig('CINEY_VERSION_NAME', 'cineyVersionName', '1.0.0')
+
 android {
     namespace = "com.ciney.tv"
     compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     defaultConfig {
         applicationId "com.ciney.tv"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode androidVersionCode
+        versionName androidVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -19,6 +50,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

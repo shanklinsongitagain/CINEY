@@ -28,7 +28,9 @@ function Search() {
 
   useEffect(() => {
     let active = true
-    if (!query.trim()) { setMovies([]); setError(''); setLoading(false); return }
+    if (!query.trim()) {
+      return () => { active = false }
+    }
     setLoading(true)
     searchTitles(query)
       .then((r) => { if (active) { setMovies(r); setError('') } })

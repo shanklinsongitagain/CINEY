@@ -1,14 +1,12 @@
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import { memo, useCallback, useEffect, useRef } from 'react'
+import { memo, useCallback, useEffect, useId } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { usePlayer } from '../context/PlayerContext'
 import { getImageUrl, getMediaReleaseDate, getMediaTitle, getMediaType } from '../lib/tmdb'
 import { NAVBAR_FOCUS_KEY } from './Navbar'
 
 /* ── Single card ────────────────────────────────────── */
 function RowCard({ movie, focusKey, prevKey, nextKey }) {
   const navigate = useNavigate()
-  const { openPlayer } = usePlayer()
   const mediaType = getMediaType(movie)
 
   function handleSelect() {
@@ -65,8 +63,11 @@ function RowCard({ movie, focusKey, prevKey, nextKey }) {
 /* ── The row ────────────────────────────────────────── */
 function MovieRow({ movies, title, eyebrow, autoFocus = false }) {
   const { ref, focusKey, focusSelf } = useFocusable({ trackChildren: true })
-  const rowId = useRef(`row-${title.replace(/\s+/g, '-').toLowerCase()}-`)
-  const cardKey = useCallback((movie) => `${rowId.current}${movie.id}`, [])
+  const rowId = useId()
+  const cardKey = useCallback(
+    (movie) => `row-${title.replace(/\s+/g, '-').toLowerCase()}-${rowId}-${movie.id}`,
+    [rowId, title],
+  )
 
   useEffect(() => {
     if (autoFocus && movies.length) focusSelf()

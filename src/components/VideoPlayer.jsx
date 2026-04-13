@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { readSavedProgress, saveProgress } from '../lib/progress'
 import { getMediaTitle } from '../lib/tmdb'
@@ -15,20 +15,66 @@ function VideoPlayer({ mediaType, id, season = 1, episode = 1, media, episodeDet
   const [volume, setVolume] = useState(0.8)
   const [isBuffering, setIsBuffering] = useState(false)
   const [error, setError] = useState(null)
+  const savedStartTime = useMemo(() => readSavedProgress(mediaType, id, season, episode), [mediaType, id, season, episode])
 
   const { ref: playPauseRef, focused: playPauseFocused } = useFocusable({
     onEnterPress: () => togglePlay(),
   })
 
+  const showControlsTemporarily = useCallback(() => {
+    setShowControls(true)
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current)
+    }
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false)
+      }, 5000)
+    }
+  }, [isPlaying])
+
+  const togglePlay = useCallback(() => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(() => {
+          setError('Playback failed')
+        })
+      } else {
+        videoRef.current.pause()
+      }
+    }
+    showControlsTemporarily()
+  }, [showControlsTemporarily])
+
+  const handleVolumeChange = useCallback((newVolume) => {
+    const vol = Math.max(0, Math.min(newVolume, 1))
+    setVolume(vol)
+    if (videoRef.current) {
+      videoRef.current.volume = vol
+    }
+    showControlsTemporarily()
+  }, [showControlsTemporarily])
+
+  const handleSkip = useCallback((direction) => {
+    if (videoRef.current) {
+      const skipAmount = direction === 'forward' ? 30 : 10
+      videoRef.current.currentTime = Math.max(
+        0,
+        Math.min(
+          videoRef.current.currentTime + (direction === 'forward' ? skipAmount : -skipAmount),
+          videoRef.current.duration,
+        ),
+      )
+    }
+    showControlsTemporarily()
+  }, [showControlsTemporarily])
+
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
 
-    const startTime = readSavedProgress(mediaType, id, season, episode)
-    video.currentTime = Math.max(0, startTime - 2)
+    video.currentTime = Math.max(0, savedStartTime - 2)
     video.volume = 0.8
-    setCurrentTime(startTime)
-    setVolume(0.8)
 
     const handleTimeUpdate = () => {
       const ct = video.currentTime
@@ -102,20 +148,7 @@ function VideoPlayer({ mediaType, id, season = 1, episode = 1, media, episodeDet
       video.removeEventListener('error', handleError)
       video.removeEventListener('ended', handleEnded)
     }
-  }, [mediaType, id, season, episode, media, episodeDetails])
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(() => {
-          setError('Playback failed')
-        })
-      } else {
-        videoRef.current.pause()
-      }
-    }
-    showControlsTemporarily()
-  }
+  }, [episode, episodeDetails, id, media, mediaType, savedStartTime, season])
 
   const handleSeek = (e) => {
     if (!duration) return
@@ -131,45 +164,11 @@ function VideoPlayer({ mediaType, id, season = 1, episode = 1, media, episodeDet
     showControlsTemporarily()
   }
 
-  const handleVolumeChange = (newVolume) => {
-    const vol = Math.max(0, Math.min(newVolume, 1))
-    setVolume(vol)
-    if (videoRef.current) {
-      videoRef.current.volume = vol
-    }
-    showControlsTemporarily()
-  }
-
-  const handleSkip = (direction) => {
-    if (videoRef.current) {
-      const skipAmount = direction === 'forward' ? 30 : 10
-      videoRef.current.currentTime = Math.max(
-        0,
-        Math.min(
-          videoRef.current.currentTime + (direction === 'forward' ? skipAmount : -skipAmount),
-          videoRef.current.duration
-        )
-      )
-    }
-    showControlsTemporarily()
-  }
-
-  const showControlsTemporarily = () => {
-    setShowControls(true)
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current)
-    }
-    if (isPlaying) {
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false)
-      }, 5000)
-    }
-  }
-
   useEffect(() => {
+    const playerNode = playerRef.current
     const handleMouseMove = () => showControlsTemporarily()
     const handleKeyDown = (e) => {
-      if (!playerRef.current?.contains(document.activeElement)) return
+      if (!playerNode?.contains(document.activeElement)) return
 
       switch (e.key) {
         case ' ':
@@ -206,16 +205,16 @@ function VideoPlayer({ mediaType, id, season = 1, episode = 1, media, episodeDet
       }
     }
 
-    playerRef.current?.addEventListener('mousemove', handleMouseMove)
-    playerRef.current?.addEventListener('touchmove', handleMouseMove)
+    playerNode?.addEventListener('mousemove', handleMouseMove)
+    playerNode?.addEventListener('touchmove', handleMouseMove)
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      playerRef.current?.removeEventListener('mousemove', handleMouseMove)
-      playerRef.current?.removeEventListener('touchmove', handleMouseMove)
+      playerNode?.removeEventListener('mousemove', handleMouseMove)
+      playerNode?.removeEventListener('touchmove', handleMouseMove)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isPlaying, volume, onClose])
+  }, [handleSkip, handleVolumeChange, onClose, showControlsTemporarily, togglePlay, volume])
 
   const formatTime = (sec) => {
     if (!Number.isFinite(sec)) return '0:00'
@@ -227,7 +226,8 @@ function VideoPlayer({ mediaType, id, season = 1, episode = 1, media, episodeDet
       : `${m}:${String(s).padStart(2, '0')}`
   }
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0
+  const effectiveCurrentTime = currentTime || savedStartTime
+  const progressPercent = duration > 0 ? (effectiveCurrentTime / duration) * 100 : 0
 
   return (
     <div ref={playerRef} className="video-player" tabIndex={0}>
@@ -285,7 +285,7 @@ function VideoPlayer({ mediaType, id, season = 1, episode = 1, media, episodeDet
               {isPlaying ? '⏸' : '▶'}
             </button>
             <div className="time-display">
-              <span>{formatTime(currentTime)}</span>
+               <span>{formatTime(effectiveCurrentTime)}</span>
               <span className="time-separator">/</span>
               <span>{formatTime(duration)}</span>
             </div>
