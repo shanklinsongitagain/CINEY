@@ -3,7 +3,7 @@ name: Android Firestick Build
 on:
   push:
     branches:
-      - main
+      - '**'
 
 permissions:
   contents: write
@@ -101,6 +101,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Delete existing release tag (allow re-publish)
+        if: github.ref == 'refs/heads/main'
         run: |
           gh release delete latest-firestick-build --yes || true
           git push --delete origin latest-firestick-build || true
@@ -108,6 +109,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish GitHub Release
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-firestick-build
