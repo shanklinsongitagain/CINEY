@@ -11,7 +11,6 @@ const ALLOWED_ORIGIN = import.meta.env.VITE_PLAYER_ALLOWED_ORIGIN || 'https://ww
 const CONTROLS_TIMEOUT_MS = 5000
 const SMART_BUFFER_DELAY_MS = 3000
 const RECOVERY_TIMEOUT_MS = 15000
-const EPISODE_ANIM_MS = 220
 const BACK_KEY = 'PV_BACK'
 
 /* ── Small control button ─────────────────────────────── */
@@ -31,17 +30,6 @@ function PVBtn({ children, onEnterPress, focusKey: fk, disabled = false }) {
   )
 }
 
-/* ── ‹ Label › arrow row ──────────────────────────────── */
-function PVPicker({ label, value, canPrev, canNext, onPrev, onNext }) {
-  return (
-    <div className={`pv-picker${label === 'Episode' ? ' pv-picker--episode' : ''}`}>
-      <PVBtn onEnterPress={onPrev} disabled={!canPrev}>‹</PVBtn>
-      <span className="pv-picker-label">{label}: {value}</span>
-      <PVBtn onEnterPress={onNext} disabled={!canNext}>›</PVBtn>
-    </div>
-  )
-}
-
 /* ── Main PlayerView ──────────────────────────────────── */
 export default function PlayerView() {
   const { player, closePlayer, updateEpisode } = usePlayer()
@@ -54,13 +42,11 @@ export default function PlayerView() {
   const [showRecovery, setShowRecovery] = useState(false)
   const [sourceIndex, setSourceIndex] = useState(0)
   const [retryTick, setRetryTick] = useState(0)
-  const [episodeMotion, setEpisodeMotion] = useState(false)
 
   const iframeRef = useRef(null)
   const hideTimerRef = useRef(null)
   const smartBufferTimerRef = useRef(null)
   const recoveryTimerRef = useRef(null)
-  const episodeMotionRef = useRef(null)
   const lastSavedAtRef = useRef(0)
 
   const { ref: ctrlRef, focusKey: ctrlKey } = useFocusable({
@@ -86,7 +72,6 @@ export default function PlayerView() {
       setShowRecovery(false)
       setSourceIndex(0)
       setRetryTick(0)
-      setEpisodeMotion(false)
       lastSavedAtRef.current = 0
     }
   }, [player, playerId, playerMediaType])
@@ -160,14 +145,6 @@ export default function PlayerView() {
     }, RECOVERY_TIMEOUT_MS)
   }, [clearSmartTimers, hasPlayEvent, player?.id, player?.mediaType, sourceIndex])
 
-  function triggerEpisodeMotion() {
-    setEpisodeMotion(true)
-    if (episodeMotionRef.current) {
-      clearTimeout(episodeMotionRef.current)
-    }
-    episodeMotionRef.current = setTimeout(() => setEpisodeMotion(false), EPISODE_ANIM_MS)
-  }
-
   /* ── Key handlers + side effects ─────────────────────── */
   useEffect(() => {
     function onKey(event) {
@@ -187,7 +164,6 @@ export default function PlayerView() {
     return () => {
       clearInactivityTimer()
       clearSmartTimers()
-      if (episodeMotionRef.current) clearTimeout(episodeMotionRef.current)
     }
   }, [player, scheduleHide, clearInactivityTimer, clearSmartTimers])
 
@@ -216,7 +192,6 @@ export default function PlayerView() {
       if (s !== season || ep !== episode) {
         setSeason(s)
         setEpisode(ep)
-        triggerEpisodeMotion()
         updateEpisode(s, ep)
       }
 
@@ -235,13 +210,6 @@ export default function PlayerView() {
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
   }, [player, season, episode, updateEpisode, clearSmartTimers])
-
-  /* ── Season helpers ──────────────────────────────────── */
-  const validSeasons = useMemo(
-    () => (player?.seasons ?? []).filter((s) => s.season_number > 0),
-    [player?.seasons],
-  )
-  const hasSeasonData = validSeasons.length > 0
 
   /* ── Retry / source switch handlers ──────────────────── */
   const handleRetry = useCallback(() => {
@@ -300,6 +268,8 @@ export default function PlayerView() {
         src={src}
         className="pv-frame"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+        referrerPolicy="no-referrer"
         allowFullScreen
         onLoad={() => {
           setLoading(false)
@@ -335,31 +305,6 @@ export default function PlayerView() {
               {isTV ? ` — S${season} · E${episode}` : ''}
             </span>
           </div>
-
-          {isTV && (
-            <div className={`pv-bar pv-bar--bottom${episodeMotion ? ' pv-bar--motion' : ''}`}>
-              <PVPicker
-                label="Season"
-                value={season}
-                canPrev={hasSeasonData
-                  ? validSeasons.some((s) => s.season_number < season)
-                  : season > 1}
-                canNext={hasSeasonData
-                  ? validSeasons.some((s) => s.season_number > season)
-                  : true}
-                onPrev={() => { setSeason((s) => s - 1); setEpisode(1); setSourceIndex(0); triggerEpisodeMotion() }}
-                onNext={() => { setSeason((s) => s + 1); setEpisode(1); setSourceIndex(0); triggerEpisodeMotion() }}
-              />
-              <PVPicker
-                label="Episode"
-                value={episode}
-                canPrev={episode > 1}
-                canNext
-                onPrev={() => { setEpisode((e) => e - 1); setSourceIndex(0); triggerEpisodeMotion() }}
-                onNext={() => { setEpisode((e) => e + 1); setSourceIndex(0); triggerEpisodeMotion() }}
-              />
-            </div>
-          )}
         </div>
       </FocusContext.Provider>
 
