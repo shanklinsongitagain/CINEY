@@ -3,8 +3,12 @@
   "appName": "Ciney",
   "webDir": "dist",
   "server": {
+    "androidScheme": "http",
+    "hostname": "localhost",
     "allowNavigation": [
-      "www.vidking.net"
+      "vidking.net",
+      "www.vidking.net",
+      "*.vidking.net"
     ]
   }
 }
