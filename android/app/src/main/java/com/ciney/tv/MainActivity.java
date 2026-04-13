@@ -25,30 +25,29 @@ import org.json.JSONObject;
 
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_NAME = "ciney_player_progress";
+public class MainActivity extends BridgeActivity {
+    private static final String PREFS_NAME = "ciney_player_progress";
     private static final long SAVE_THROTTLE_MS = 7000L;
     private static final long MEDIA_TOGGLE_THROTTLE_MS = 800L;
-
-    private WebView webView;
-    private long lastSavedAtMs = 0L;
-    private long lastMediaToggleAtMs = 0L;
+    private static final String LOG_TAG = "CineyWeb";
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-        getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
-
+    @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         webView = getBridge().getWebView();
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
-        webView.requestFocus();
-        webView.setKeepScreenOn(true);
+
+        webView = getBridge().getWebView();
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         settings.setDomStorageEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -57,10 +56,10 @@ public class MainActivity extends BridgeActivity {
         }
         settings.setLoadsImagesAutomatically(true);
         settings.setOffscreenPreRaster(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        settings.setBuiltInZoomControls(false);
+            settings.setSafeBrowsingEnabled(false);
+        }
+        settings.setLoadsImagesAutomatically(true);
+        settings.setOffscreenPreRaster(true);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
 
@@ -75,9 +74,9 @@ public class MainActivity extends BridgeActivity {
             }
 
             @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                injectMessageBridge();
+                return super.onConsoleMessage(consoleMessage);
+            }
+        });
             }
 
             @Override
@@ -182,7 +181,7 @@ public class MainActivity extends BridgeActivity {
             "  return window.__cineyExitFullscreen();" +
             "};" +
             "})();";
-
+            "};" +
         webView.evaluateJavascript(script, null);
     }
 
